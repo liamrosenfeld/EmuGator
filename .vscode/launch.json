@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "type": "chrome",
+        "request": "launch",
+        "name": "Debug WebAssembly in Chrome",
+        "url": "http://localhost:8080",
+        "webRoot": "${workspaceFolder}",
+        "sourceMaps": true,
+        "sourceMapPathOverrides": {
+          "webpack:///./src/*": "${webRoot}/src/*"
+        },
+        "disableNetworkCache": true,
+        "userDataDir": "${workspaceFolder}/.vscode/chrome",
+        "runtimeArgs": ["--enable-features=WebAssembly"]
+      }
+    ]
+}
