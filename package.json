@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "dev": "dx serve --hot-reload",
+    "tailwind": "tailwindcss -i ./input.css -o ./assets/tailwind.css --watch"
+  },
   "devDependencies": {
     "tailwindcss": "^3.4.13"
   }
