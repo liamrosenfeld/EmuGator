@@ -1,0 +1,42 @@
+| #  | Instruction Name | Format  | Example                   |
+|----|------------------|---------|---------------------------|
+| 1  | ADDI             | I-type  | ADDI x1, x2, 10           |
+| 2  | SLTI             | I-type  | SLTI x1, x2, 10           |
+| 3  | SLTIU            | I-type  | SLTIU x1, x2, 10          |
+| 4  | ANDI             | I-type  | ANDI x1, x2, 0xFF         |
+| 5  | ORI              | I-type  | ORI x1, x2, 0xFF          |
+| 6  | XORI             | I-type  | XORI x1, x2, 0xFF         |
+| 7  | SLLI             | I-type  | SLLI x1, x2, 2            |
+| 8  | SRLI             | I-type  | SRLI x1, x2, 2            |
+| 9  | SRAI             | I-type  | SRAI x1, x2, 2            |
+| 10 | LUI              | U-type  | LUI x1, 0xFFF             |
+| 11 | AUIPC            | U-type  | AUIPC x1, 0xFFF           |
+| 12 | ADD              | R-type  | ADD x1, x2, x3            |
+| 13 | SUB              | R-type  | SUB x1, x2, x3            |
+| 14 | SLT              | R-type  | SLT x1, x2, x3            |
+| 15 | SLTU             | R-type  | SLTU x1, x2, x3           |
+| 16 | AND              | R-type  | AND x1, x2, x3            |
+| 17 | OR               | R-type  | OR x1, x2, x3             |
+| 18 | XOR              | R-type  | XOR x1, x2, x3            |
+| 19 | SLL              | R-type  | SLL x1, x2, x3            |
+| 20 | SRL              | R-type  | SRL x1, x2, x3            |
+| 21 | SRA              | R-type  | SRA x1, x2, x3            |
+| 22 | JAL              | J-type  | JAL x1, 0x100             |
+| 23 | JALR             | I-type  | JALR x1, x2, 0x100        |
+| 24 | BEQ              | B-type  | BEQ x1, x2, label         |
+| 25 | BNE              | B-type  | BNE x1, x2, label         |
+| 26 | BLT              | B-type  | BLT x1, x2, label         |
+| 27 | BLTU             | B-type  | BLTU x1, x2, label        |
+| 28 | BGE              | B-type  | BGE x1, x2, label         |
+| 29 | BGEU             | B-type  | BGEU x1, x2, label        |
+| 30 | LW               | I-type  | LW x1, 0(x2)              |
+| 31 | LH               | I-type  | LH x1, 0(x2)              |
+| 32 | LHU              | I-type  | LHU x1, 0(x2)             |
+| 33 | LB               | I-type  | LB x1, 0(x2)              |
+| 34 | LBU              | I-type  | LBU x1, 0(x2)             |
+| 35 | SW               | S-type  | SW x1, 0(x2)              |
+| 36 | SH               | S-type  | SH x1, 0(x2)              |
+| 37 | SB               | S-type  | SB x1, 0(x2)              |
+| 38 | FENCE            | I-type  | FENCE                     |
+| 39 | ECALL            | I-type  | ECALL                     |
+| 40 | EBREAK           | I-type  | EBREAK                    |
