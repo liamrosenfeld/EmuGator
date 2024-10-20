@@ -63,6 +63,12 @@ pub fn get_handler(inst: Instruction) -> Result<InstructionHandler, ()> {
             0b0000_0000_0001_00000_000_00000_1110011 => Ok(EBREAK),
             _ => Err(())
         },
+        (0b1110011, 0b001,         _) => Ok(CSRRW),
+        (0b1110011, 0b010,         _) => Ok(CSRRS),
+        (0b1110011, 0b011,         _) => Ok(CSRRC),
+        (0b1110011, 0b101,         _) => Ok(CSRRWI),
+        (0b1110011, 0b110,         _) => Ok(CSRRSI),
+        (0b1110011, 0b111,         _) => Ok(CSRRCI),
         _ => Err(())
     }
 }
@@ -161,7 +167,7 @@ fn BEQ(inst: Instruction, state: EmulatorState) -> EmulatorState {
 fn BNE(inst: Instruction, state: EmulatorState) -> EmulatorState {
     todo!()
 }
-
+              
 fn BLT(inst: Instruction, state: EmulatorState) -> EmulatorState {
     todo!()
 }
@@ -303,5 +309,29 @@ fn ECALL(inst: Instruction, state: EmulatorState) -> EmulatorState {
 }
 
 fn EBREAK(inst: Instruction, state: EmulatorState) -> EmulatorState {
+    todo!()
+}
+
+fn CSRRW(inst: Instruction, state: EmulatorState) -> EmulatorState {
+    todo!()
+}
+
+fn CSRRS(inst: Instruction, state: EmulatorState) -> EmulatorState {
+    todo!()
+}
+
+fn CSRRC(inst: Instruction, state: EmulatorState) -> EmulatorState {
+    todo!()
+}
+
+fn CSRRWI(inst: Instruction, state: EmulatorState) -> EmulatorState {
+    todo!()
+}
+
+fn CSRRSI(inst: Instruction, state: EmulatorState) -> EmulatorState {
+    todo!()
+}
+
+fn CSRRCI(inst: Instruction, state: EmulatorState) -> EmulatorState {
     todo!()
 }
