@@ -1,4 +1,5 @@
 #![allow(non_snake_case)]
+mod emulator;
 
 use dioxus::prelude::*;
 use dioxus_logger::tracing::{info, Level};
