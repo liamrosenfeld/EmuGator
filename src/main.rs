@@ -1,18 +1,11 @@
-#![allow(non_snake_case)]
-mod emulator;
+mod code_editor;
 
 use dioxus::prelude::*;
 use dioxus_logger::tracing::{info, Level};
 
-const _TAILWIND_URL: &str = manganis::mg!(file("assets/tailwind.css"));
+use code_editor::CodeEditor;
 
-#[derive(Clone, Routable, Debug, PartialEq)]
-enum Route {
-    #[route("/")]
-    Home {},
-    #[route("/blog/:id")]
-    Blog { id: i32 },
-}
+const _TAILWIND_URL: &str = manganis::mg!(file("./assets/tailwind.css"));
 
 fn main() {
     // Init logger
@@ -21,53 +14,76 @@ fn main() {
     launch(App);
 }
 
+#[component]
+#[allow(non_snake_case)]
 fn App() -> Element {
+    let source = use_signal(|| "test".to_string());
+
+    use_effect(move || {
+        info!("source changed:\n{}", source.read());
+    });
+
     rsx! {
-        Router::<Route> {}
+        div {
+            class: "flex h-screen w-full",
+            div {
+                class: "w-1/2 p-4",
+                style: "background-color: #1E1E1E",
+                CodeEditor {
+                    source: source
+                }
+            }
+            div {
+                class: "w-1/2 flex flex-col",
+                div {
+                    class: "h-1/3 bg-gray-200 p-4",
+                    "Right Top View"
+                    TestComponent {
+
+                    }
+                }
+                div {
+                    class: "h-1/3 bg-gray-300 p-4",
+                    "Right Middle View"
+                }
+                div {
+                    class: "h-1/3 bg-gray-400 p-4",
+                    "Right Bottom View"
+                }
+            }
+        }
     }
 }
 
 #[component]
-fn Blog(id: i32) -> Element {
-    rsx! {
-        Link { to: Route::Home {}, "Go to counter" }
-        "Blog post {id}"
-    }
-}
-
-#[component]
-fn Home() -> Element {
+#[allow(non_snake_case)]
+fn TestComponent() -> Element {
     let mut count = use_signal(|| 0);
 
     rsx! {
-        Link {
-            to: Route::Blog {
-                id: count()
-            },
-            "Go to blog"
+        h1 {
+            class: "text-3xl font-bold mb-6 text-blue-600",
+            "Test counter: {count}"
         }
         div {
-            h1 {
-                class: "text-3xl font-bold mb-6 text-blue-600",
-                "High-Five counter: {count}"
-            }
+            class: "space-x-2",
             button {
                 class: "bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded mb-2",
-                onclick: move |_| count += 1, "Up high!"
+                onclick: move |_| count += 1, "Up!"
             }
             button {
                 class: "bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded mb-2",
-                onclick: move |_| count -= 1, "Down low!"
+                onclick: move |_| count -= 1, "Down!"
             }
             button {
                 class: "bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded",
-                onclick: move |_| another_function(), "Another Button"
+                onclick: move |_| testing_function(), "Test Function Call"
             }
         }
     }
 }
 
-fn another_function() {
+fn testing_function() {
     let test = 5;
     info!("button pressed! {}", test);
 }
