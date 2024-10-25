@@ -327,53 +327,57 @@ impl Assembler {
         let mut current_section = Section::Text; // Default to Text section
         let mut text_address = 0;
         let mut data_address = 0;
-        let mut current_data_label = String::new();
     
         // First pass: collect labels and process data
         for (line_num, line) in program.lines().enumerate() {
             let line = self.clean_line(line);
             if line.is_empty() { continue; }
+            
+            let (label_opt, content) = self.split_label_and_content(&line);
+            
+            // Handle label if present
+            if let Some(label) = label_opt {
+                match current_section {
+                    Section::Text => {
+                        assembled.add_label(label, text_address, false);
+                    },
+                    Section::Data => {
+                        assembled.add_label(label, data_address, true);
+                    }
+                }
+            }
+            
+            // If there's no content after the label, continue to next line
+            if content.is_empty() {
+                continue;
+            }
     
-            if line.starts_with('.') {
-                if line == ".data" {
+            // Handle section directives
+            if content.starts_with('.') {
+                if content == ".data" {
                     current_section = Section::Data;
                     continue;
                 }
-                if line == ".text" {
+                if content == ".text" {
                     current_section = Section::Text;
                     continue;
                 }
                 
                 if current_section == Section::Data {
                     // Handle data directive while in data section
-                    if let Ok(Some((_, data))) = self.parse_data_line(&line) {
-                        if !current_data_label.is_empty() {
-                            assembled.add_label(current_data_label.clone(), data_address, true);
-                            current_data_label.clear();
-                        }
+                    if let Ok(Some((_, data))) = self.parse_data_line(&content) {
                         assembled.add_data(data_address, &data.values);
                         data_address += data.size as u32;
                     }
                     continue;
                 } else {
-                    return Err(format!("Data directive '{}' outside of .data section on line {}", line, line_num + 1));
+                    return Err(format!("Data directive '{}' outside of .data section on line {}", content, line_num + 1));
                 }
             }
-    
-            match current_section {
-                Section::Data => {
-                    if line.ends_with(':') {
-                        current_data_label = line.trim_end_matches(':').to_string();
-                    }
-                },
-                Section::Text => {
-                    if line.ends_with(':') {
-                        let label = line.trim_end_matches(':').to_string();
-                        assembled.add_label(label, text_address, false);
-                    } else {
-                        text_address += 4;
-                    }
-                }
+            
+            // Count instruction size for text section
+            if current_section == Section::Text && !content.is_empty() {
+                text_address += 4;
             }
         }
     
@@ -383,10 +387,15 @@ impl Assembler {
     
         for (line_num, line) in program.lines().enumerate() {
             let line = self.clean_line(line);
-            if line.is_empty() || line.starts_with('.') || line.ends_with(':') { continue; }
+            if line.is_empty() { continue; }
+            
+            let (_, content) = self.split_label_and_content(&line);
+            if content.is_empty() || content == ".data" || content == ".text" { 
+                continue; 
+            }
     
-            if current_section == Section::Text {
-                match self.parse_instruction(&line, &assembled.labels, &assembled.data_labels, text_address) {
+            if current_section == Section::Text && !content.starts_with('.') {
+                match self.parse_instruction(&content, &assembled.labels, &assembled.data_labels, text_address) {
                     Ok(instruction) => {
                         let encoded = self.encode_instruction(&instruction);
                         assembled.add_instruction(text_address, encoded, line_num + 1);
@@ -404,6 +413,16 @@ impl Assembler {
         match line.split('#').next() {
             Some(l) => l.trim().to_string(),
             None => String::new(),
+        }
+    }
+
+    fn split_label_and_content(&self, line: &str) -> (Option<String>, String) {
+        if let Some(colon_pos) = line.find(':') {
+            let (label, rest) = line.split_at(colon_pos);
+            let content = rest[1..].trim().to_string();
+            (Some(label.trim().to_string()), content)
+        } else {
+            (None, line.to_string())
         }
     }
 
