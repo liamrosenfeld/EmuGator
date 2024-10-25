@@ -8,7 +8,6 @@ pub enum Format {
 
 #[derive(Debug, Clone)]
 pub struct InstructionInfo {
-    name: String,
     format: Format,
     opcode: u32,
     funct3: Option<u32>,
@@ -33,7 +32,6 @@ impl InstructionSet {
         let mut instructions = HashMap::new();
         
         instructions.insert("ADD".to_string(), InstructionInfo {
-            name: "ADD".to_string(),
             format: Format::R,
             opcode: 0b0110011,
             funct3: Some(0x0),
@@ -41,7 +39,6 @@ impl InstructionSet {
         });
         
         instructions.insert("ADDI".to_string(), InstructionInfo {
-            name: "ADDI".to_string(),
             format: Format::I,
             opcode: 0b0010011,
             funct3: Some(0x0),
