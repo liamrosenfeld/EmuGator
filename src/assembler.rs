@@ -709,8 +709,18 @@ impl Assembler {
             Format::I => {
                 let rd = inst.rd.unwrap_or(0) & 0x1F;
                 let rs1 = inst.rs1.unwrap_or(0) & 0x1F;
-                let imm = ((inst.immediate.unwrap_or(0) << 20) >> 20) as u32;
+                let mut imm = ((inst.immediate.unwrap_or(0) << 20) >> 20) as u32;
                 let funct3 = inst.info.funct3.unwrap_or(0) & 0x7;
+    
+                // Special handling for shift instructions (SLLI, SRLI, SRAI)
+                if let Some(funct7) = inst.info.funct7 {
+                    // For shift instructions, immediate is split into funct7 and shamt
+                    if inst.info.opcode == 0b0010011 && 
+                       (funct3 == 0x1 || funct3 == 0x5) {  // SLLI, SRLI, SRAI
+                        let shamt = imm & 0x1F;  // Bottom 5 bits only
+                        imm = (funct7 << 5) | shamt;  // Combine funct7 and shamt
+                    }
+                }
                 
                 (imm << 20) | (rs1 << 15) | (funct3 << 12) | 
                 (rd << 7) | inst.info.opcode
@@ -743,9 +753,9 @@ impl Assembler {
             },
             Format::U => {
                 let rd = inst.rd.unwrap_or(0) & 0x1F;
-                let imm = (inst.immediate.unwrap_or(0) as u32) & 0xFFFFF000;
+                let imm = inst.immediate.unwrap_or(0) as u32;
                 
-                imm | (rd << 7) | inst.info.opcode
+                (imm & 0xFFFFF000) | (rd << 7) | inst.info.opcode
             },
             Format::J => {
                 let rd = inst.rd.unwrap_or(0) & 0x1F;
