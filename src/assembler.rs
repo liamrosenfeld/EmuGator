@@ -1,4 +1,4 @@
-use std::collections::{HashMap, BTreeMap};
+pub use std::collections::{HashMap, BTreeMap};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Format {
@@ -645,63 +645,21 @@ impl AssembledProgram {
         
         self.source_map.insert(address, line_num);
     }
-
-    fn print(&self) {
-        println!("Assembly successful!\n");
-        println!("Assembled Instructions:");
-        
-        let mut address = 0u32;
-        while address < (self.instruction_memory.len() as u32 / 4) * 4 {
-            if let Some(&line_num) = self.source_map.get(&address) {
-                let encoded = 
-                    (*self.instruction_memory.get(&(address + 3)).unwrap_or(&0) as u32) << 24 |
-                    (*self.instruction_memory.get(&(address + 2)).unwrap_or(&0) as u32) << 16 |
-                    (*self.instruction_memory.get(&(address + 1)).unwrap_or(&0) as u32) << 8 |
-                    (*self.instruction_memory.get(&address).unwrap_or(&0) as u32);
-                
-                println!("0x{:08X} (line {:3}): 0x{:08X}", address, line_num, encoded);
-                println!("    Bytes: {:02X} {:02X} {:02X} {:02X}", 
-                    encoded & 0xFF,
-                    (encoded >> 8) & 0xFF,
-                    (encoded >> 16) & 0xFF,
-                    (encoded >> 24) & 0xFF
-                );
-            }
-            address += 4;
-        }
-
-        println!("\nLabels:");
-        for (label, addr) in &self.labels {
-            println!("{}: 0x{:08X}", label, addr);
-        }
-    }
 } 
 
-fn main() {
-    let test_program = r#"
-# This is a test program that demonstrates various instructions
-start:
-    ADDI x1, x0, 10        # Initialize x1 with 10
-    LUI x2, 0x1234         # Load upper immediate
-    SW x1, 0(x2)           # Store x1 to memory
-    LW x3, 0(x2)           # Load from memory to x3
-loop:
-    ADD x4, x1, x3         # Add registers
-    ADDI x1, x1, -1        # Decrement x1
-    BNE x1, x0, loop       # Branch if x1 != 0
-    JAL x5, end            # Jump to end
-middle:
-    SLL x6, x3, x1         # Shift left logical
-    BEQ x0, x0, start      # Branch back to start
-end:
-    SUB x7, x4, x3         # Subtract registers
-"#;
-
+pub fn get_emulator_maps(program: &str) -> Result<(BTreeMap<u32, u8>, BTreeMap<u32, usize>, BTreeMap<u32, u8>), String> {
     let assembler = Assembler::new();
-    match assembler.assemble(test_program) {
-        Ok(program) => {
-            program.print();
-        }
-        Err(e) => println!("Error: {}", e),
+    match assembler.assemble(program) {
+        Ok(assembled) => {
+            // Create empty data memory map - this would be populated if we had data directives
+            let data_memory: BTreeMap<u32, u8> = BTreeMap::new();
+            
+            Ok((
+                assembled.instruction_memory,
+                assembled.source_map,
+                data_memory
+            ))
+        },
+        Err(e) => Err(e)
     }
 }
