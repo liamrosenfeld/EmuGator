@@ -8,8 +8,16 @@ edition = "2021"
 
 [dependencies]
 
+# dioxus
 dioxus = { version = "0.5", features = ["web", "router"] }
+manganis = "0.2"
 
-# Debug
-dioxus-logger = "0.5.1"
-manganis = "0.2.2"
+# text editor
+monaco = "0.5"
+
+# wasm stuff
+wasm-bindgen = "0.2"
+web-sys = "0.3"
+
+# debug
+dioxus-logger = "0.5"

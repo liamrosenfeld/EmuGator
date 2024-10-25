@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "dioxuslabs.dioxus",
+        "tamasfe.even-better-toml",
+        "rust-lang.rust-analyzer",
+        "bradlc.vscode-tailwindcss",
+        "dtsvet.vscode-wasm",
+        "ms-vscode.wasm-dwarf-debugging"
+    ]
+}
