@@ -1,5 +1,17 @@
 pub use std::collections::{HashMap, BTreeMap};
 
+#[derive(Debug, PartialEq)]
+enum Section {
+    Data,
+    Text,
+}
+
+#[derive(Debug)]
+struct DataItem {
+    size: usize,  // in bytes
+    values: Vec<u8>,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Format {
     R, 
@@ -312,38 +324,79 @@ impl Assembler {
 
     fn assemble(&self, program: &str) -> Result<AssembledProgram, String> {
         let mut assembled = AssembledProgram::new();
-        let mut address = 0;
-
-        // First pass: collect labels
-        for (_line_num, line) in program.lines().enumerate() {
-            let line = self.clean_line(line);
-            if line.is_empty() { continue; }
-            
-            if line.ends_with(':') {
-                let label = line.trim_end_matches(':').to_string();
-                assembled.add_label(label, address);
-                continue;
-            }
-
-            address += 4;
-        }
-
-        // Second pass: assemble instructions
-        address = 0;
+        let mut current_section = Section::Text; // Default to Text section
+        let mut text_address = 0;
+        let mut data_address = 0;
+        let mut current_data_label = String::new();
+    
+        // First pass: collect labels and process data
         for (line_num, line) in program.lines().enumerate() {
             let line = self.clean_line(line);
-            if line.is_empty() || line.ends_with(':') { continue; }
-
-            match self.parse_instruction(&line, &assembled.labels, address) {
-                Ok(instruction) => {
-                    let encoded = self.encode_instruction(&instruction);
-                    assembled.add_instruction(address, encoded, line_num + 1);
-                    address += 4;
+            if line.is_empty() { continue; }
+    
+            if line.starts_with('.') {
+                if line == ".data" {
+                    current_section = Section::Data;
+                    continue;
                 }
-                Err(e) => return Err(format!("Error on line {}: {}", line_num + 1, e)),
+                if line == ".text" {
+                    current_section = Section::Text;
+                    continue;
+                }
+                
+                if current_section == Section::Data {
+                    // Handle data directive while in data section
+                    if let Ok(Some((_, data))) = self.parse_data_line(&line) {
+                        if !current_data_label.is_empty() {
+                            assembled.add_label(current_data_label.clone(), data_address, true);
+                            current_data_label.clear();
+                        }
+                        assembled.add_data(data_address, &data.values);
+                        data_address += data.size as u32;
+                    }
+                    continue;
+                } else {
+                    return Err(format!("Data directive '{}' outside of .data section on line {}", line, line_num + 1));
+                }
+            }
+    
+            match current_section {
+                Section::Data => {
+                    if line.ends_with(':') {
+                        current_data_label = line.trim_end_matches(':').to_string();
+                    }
+                },
+                Section::Text => {
+                    if line.ends_with(':') {
+                        let label = line.trim_end_matches(':').to_string();
+                        assembled.add_label(label, text_address, false);
+                    } else {
+                        text_address += 4;
+                    }
+                }
             }
         }
-
+    
+        // Second pass: assemble instructions
+        current_section = Section::Text; // Reset to default Text section
+        text_address = 0;
+    
+        for (line_num, line) in program.lines().enumerate() {
+            let line = self.clean_line(line);
+            if line.is_empty() || line.starts_with('.') || line.ends_with(':') { continue; }
+    
+            if current_section == Section::Text {
+                match self.parse_instruction(&line, &assembled.labels, &assembled.data_labels, text_address) {
+                    Ok(instruction) => {
+                        let encoded = self.encode_instruction(&instruction);
+                        assembled.add_instruction(text_address, encoded, line_num + 1);
+                        text_address += 4;
+                    }
+                    Err(e) => return Err(format!("Error on line {}: {}", line_num + 1, e)),
+                }
+            }
+        }
+    
         Ok(assembled)
     }
 
@@ -354,8 +407,62 @@ impl Assembler {
         }
     }
 
-    fn parse_instruction(&self, line: &str, labels: &HashMap<String, u32>, current_address: u32) 
-        -> Result<Instruction, String> {
+    fn parse_data_line(&self, line: &str) -> Result<Option<(String, DataItem)>, String> {
+        if line.ends_with(':') {
+            return Ok(None);
+        }
+    
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.len() < 2 {
+            return Err("Invalid data directive".to_string());
+        }
+    
+        let directive = parts[0];
+        let joined = parts[1..].join(" ");
+        let values: Vec<&str> = joined.split(',').map(|s| s.trim()).collect();
+    
+        match directive {
+            ".byte" => {
+                let bytes = values.iter()
+                    .map(|v| self.parse_number(v))
+                    .collect::<Result<Vec<u8>, _>>()?;
+                Ok(Some((String::new(), DataItem { size: bytes.len(), values: bytes })))
+            },
+            ".word" => {
+                let mut bytes = Vec::new();
+                for value in &values {
+                    let word = self.parse_number(value)? as u32;
+                    bytes.extend_from_slice(&word.to_le_bytes());
+                }
+                Ok(Some((String::new(), DataItem { size: bytes.len(), values: bytes })))
+            },
+            ".ascii" | ".string" => {
+                let text = values.join(",")
+                    .trim_matches('"')
+                    .replace("\\n", "\n")
+                    .replace("\\t", "\t")
+                    .replace("\\r", "\r");
+                let mut bytes = text.as_bytes().to_vec();
+                if directive == ".string" {
+                    bytes.push(0);
+                }
+                Ok(Some((String::new(), DataItem { size: bytes.len(), values: bytes })))
+            },
+            _ => Err(format!("Unknown data directive: {}", directive)),
+        }
+    }
+
+    fn parse_number(&self, value: &str) -> Result<u8, String> {
+        let value = value.trim();
+        if value.starts_with("0x") {
+            u8::from_str_radix(&value[2..], 16)
+        } else {
+            value.parse::<u8>()
+        }.map_err(|_| format!("Invalid numeric value: {}", value))
+    }
+
+    fn parse_instruction(&self, line: &str, text_labels: &HashMap<String, u32>, 
+        data_labels: &HashMap<String, u32>, current_address: u32) -> Result<Instruction, String> {
         let parts: Vec<&str> = line.split(|c| c == ' ' || c == ',')
             .filter(|s| !s.is_empty())
             .collect();
@@ -368,13 +475,28 @@ impl Assembler {
         let info = self.instruction_set.get(&name)
             .ok_or(format!("Unknown instruction: {}", name))?;
 
+        if info.format == Format::I && info.opcode == 0b0000011 || 
+           info.format == Format::S && info.opcode == 0b0100011 {
+            if parts.len() == 3 && data_labels.contains_key(parts[2]) {
+                let base_addr = data_labels[parts[2]];
+                let modified_addr = format!("{}(x0)", base_addr);
+                let mut modified_parts = parts.to_vec();
+                modified_parts[2] = &modified_addr;
+                return match info.format {
+                    Format::I => self.parse_i_type(&modified_parts, info),
+                    Format::S => self.parse_s_type(&modified_parts, info),
+                    _ => unreachable!(),
+                };
+            }
+        }
+
         match info.format {
             Format::R => self.parse_r_type(&parts, info),
             Format::I => self.parse_i_type(&parts, info),
             Format::S => self.parse_s_type(&parts, info),
-            Format::B => self.parse_b_type(&parts, info, labels, current_address),
+            Format::B => self.parse_b_type(&parts, info, text_labels, current_address),
             Format::U => self.parse_u_type(&parts, info),
-            Format::J => self.parse_j_type(&parts, info, labels, current_address),
+            Format::J => self.parse_j_type(&parts, info, text_labels, current_address),
         }
     }
 
@@ -394,7 +516,7 @@ impl Assembler {
 
     fn parse_i_type(&self, parts: &[&str], info: InstructionInfo) -> Result<Instruction, String> {
         match info.opcode {
-            0b0000011 => self.parse_load_type(&parts, info), // Load instructions
+            0b0000011 => self.parse_load_type(&parts, info),
             _ => {
                 if parts.len() != 4 {
                     return Err("I-type instructions need 2 registers and an immediate".to_string());
@@ -452,7 +574,6 @@ impl Assembler {
         let target = labels.get(parts[3])
             .ok_or(format!("Undefined label: {}", parts[3]))?;
         
-        // Calculate offset and ensure it's aligned
         let offset = (*target as i32) - (current_address as i32);
         if offset & 1 != 0 {
             return Err("Branch target must be aligned to 2 bytes".to_string());
@@ -488,7 +609,6 @@ impl Assembler {
         }
     
         let offset = if let Ok(imm) = self.parse_immediate(parts[2]) {
-            // Check alignment for immediate values too
             if imm & 1 != 0 {
                 return Err("Jump target must be aligned to 2 bytes".to_string());
             }
@@ -600,7 +720,7 @@ impl Assembler {
                 let imm = (inst.immediate.unwrap_or(0) as u32) << 12;
                 
                 imm | (rd << 7) | inst.info.opcode
-            }
+            },
             Format::J => {
                 let rd = inst.rd.unwrap_or(0) & 0x1F;
                 let imm = inst.immediate.unwrap_or(0) as u32;
@@ -620,21 +740,29 @@ impl Assembler {
 #[derive(Debug)]
 struct AssembledProgram {
     instruction_memory: BTreeMap<u32, u8>,
+    data_memory: BTreeMap<u32, u8>,
     source_map: BTreeMap<u32, usize>,
     labels: HashMap<String, u32>,
+    data_labels: HashMap<String, u32>,
 }
 
 impl AssembledProgram {
     fn new() -> Self {
         AssembledProgram {
             instruction_memory: BTreeMap::new(),
+            data_memory: BTreeMap::new(),
             source_map: BTreeMap::new(),
             labels: HashMap::new(),
+            data_labels: HashMap::new(),
         }
     }
 
-    fn add_label(&mut self, label: String, address: u32) {
-        self.labels.insert(label, address);
+    fn add_label(&mut self, label: String, address: u32, is_data: bool) {
+        if is_data {
+            self.data_labels.insert(label, address);
+        } else {
+            self.labels.insert(label, address);
+        }
     }
 
     fn add_instruction(&mut self, address: u32, encoded: u32, line_num: usize) {
@@ -645,21 +773,22 @@ impl AssembledProgram {
         
         self.source_map.insert(address, line_num);
     }
-} 
+
+    fn add_data(&mut self, address: u32, data: &[u8]) {
+        for (i, &byte) in data.iter().enumerate() {
+            self.data_memory.insert(address + i as u32, byte);
+        }
+    }
+}
 
 pub fn get_emulator_maps(program: &str) -> Result<(BTreeMap<u32, u8>, BTreeMap<u32, usize>, BTreeMap<u32, u8>), String> {
     let assembler = Assembler::new();
     match assembler.assemble(program) {
-        Ok(assembled) => {
-            // Create empty data memory map - this would be populated if we had data directives
-            let data_memory: BTreeMap<u32, u8> = BTreeMap::new();
-            
-            Ok((
-                assembled.instruction_memory,
-                assembled.source_map,
-                data_memory
-            ))
-        },
+        Ok(assembled) => Ok((
+            assembled.instruction_memory,
+            assembled.source_map,
+            assembled.data_memory
+        )),
         Err(e) => Err(e)
     }
 }

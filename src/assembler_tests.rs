@@ -2,14 +2,31 @@ mod assembler;
 
 fn main() {
     let test_program = r#"
-# Test program
-start:
-    ADDI x1, x0, 10       # x1 = 10
-    ADDI x2, x0, 20       # x2 = 20
-    ADD x3, x1, x2        # x3 = x1 + x2
-loop:
-    ADDI x1, x1, -1       # Decrement x1
-    BNE x1, x0, loop      # Branch if x1 != 0
+.data
+message:
+    .string "yay\n"
+numbers:
+    .word 1, 2, 3, 4
+bytes:
+    .byte 0xFF, 0x42, 0x33
+array:
+    .ascii "test"
+
+.text
+main:
+    # Load the message address into x1
+    lw x1, message
+    # Load first number into x2
+    lw x2, numbers
+    # Load first byte into x3
+    lb x3, bytes
+    # Load array into x4
+    lw x4, array
+
+    # Do some operations
+    addi x5, x0, 5
+    add x6, x2, x5
+    sw x6, 0(x1)
 "#;
 
     // Get the maps from the assembler
