@@ -1,8 +1,7 @@
 mod assembler;
 
 fn main() {
-    // Example assembly program as a string
-    let test_program = r#"
+    let _test_program = r#"
 .data
 message: .string "test\n"
 numbers: .word 1, 2, 3, 4
@@ -73,7 +72,7 @@ function1:
     JAL x5, function2
 
 function2:
-    JAL x5, branch_target1
+    JAL x5, branch_target2
 
 branch_target1:
     ADDI x5, x6, 10
@@ -94,15 +93,39 @@ branch_target6:
     ADDI x5, x6, 10
 "#;
 
-    // Call get_emulator_maps and handle the Result
-    match assembler::get_emulator_maps(test_program) {
+let _simple_loop_program = r#"
+.data
+result: .word 6   # Allocate space to store final result
+result2: .word 5  # Allocate a second word for fun for this test
+
+.text
+main:
+    # Initialize counter (x5) to 3
+    ADDI x5, x0, 3
+    # Initialize x6 to 0
+    ADD x6, x0, x0
+
+loop:
+    # Add 3 to x6
+    ADDI x6, x6, 3
+    
+    # Decrement counter
+    ADDI x5, x5, -1
+    
+    # If counter >= 0, continue loop
+    BGE x5, x0, loop
+    
+    # Load address of result (we'll need to add the actual address)
+    # Store x6 at address in x7
+    SW x6, result2    # Store x6 at address in x7
+"#;
+
+    match assembler::get_emulator_maps(_simple_loop_program) {
         Ok((inst_mem, source_map, data_mem)) => {
-            // Now you have three local variables:
             // inst_mem: BTreeMap<u32, u8> - instruction memory
             // source_map: BTreeMap<u32, usize> - source line mapping
             // data_mem: BTreeMap<u32, u8> - data memory
             
-            // Example: print out the maps
             println!("Instruction Memory (Address -> Byte):");
             for (&addr, &byte) in &inst_mem {
                 println!("0x{:08X}: 0x{:02X}", addr, byte);
