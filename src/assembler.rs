@@ -485,15 +485,16 @@ impl Assembler {
         let parts: Vec<&str> = line.split(|c| c == ' ' || c == ',')
             .filter(|s| !s.is_empty())
             .collect();
-
+    
         if parts.is_empty() {
             return Err("Empty instruction".to_string());
         }
-
+    
         let name = parts[0].to_uppercase();
         let info = self.instruction_set.get(&name)
             .ok_or(format!("Unknown instruction: {}", name))?;
-
+    
+        // For load/store instructions with labels, convert label to base+offset format
         if info.format == Format::I && info.opcode == 0b0000011 || 
            info.format == Format::S && info.opcode == 0b0100011 {
             if parts.len() == 3 && data_labels.contains_key(parts[2]) {
@@ -502,13 +503,13 @@ impl Assembler {
                 let mut modified_parts = parts.to_vec();
                 modified_parts[2] = &modified_addr;
                 return match info.format {
-                    Format::I => self.parse_i_type(&modified_parts, info),
-                    Format::S => self.parse_s_type(&modified_parts, info),
+                    Format::I => self.parse_i_type(&modified_parts, info.clone()), // Use same instruction info
+                    Format::S => self.parse_s_type(&modified_parts, info.clone()),
                     _ => unreachable!(),
                 };
             }
         }
-
+    
         match info.format {
             Format::R => self.parse_r_type(&parts, info),
             Format::I => self.parse_i_type(&parts, info),
@@ -595,7 +596,10 @@ impl Assembler {
         
         let offset = (*target as i32) - (current_address as i32);
         if offset & 1 != 0 {
-            return Err("Branch target must be aligned to 2 bytes".to_string());
+            return Err("Branch target must be 2-byte aligned".to_string());
+        }
+        if offset > 4095 || offset < -4096 {
+            return Err("Branch offset out of range (-4096 to +4095)".to_string());
         }
     
         Ok(Instruction {
@@ -629,7 +633,7 @@ impl Assembler {
     
         let offset = if let Ok(imm) = self.parse_immediate(parts[2]) {
             if imm & 1 != 0 {
-                return Err("Jump target must be aligned to 2 bytes".to_string());
+                return Err("Jump target must be 2-byte aligned".to_string());
             }
             imm
         } else {
@@ -637,7 +641,10 @@ impl Assembler {
                 .ok_or(format!("Undefined label: {}", parts[2]))?;
             let offset = (*target as i32) - (current_address as i32);
             if offset & 1 != 0 {
-                return Err("Jump target must be aligned to 2 bytes".to_string());
+                return Err("Jump target must be 2-byte aligned".to_string());
+            }
+            if offset > 1048575 || offset < -1048576 {
+                return Err("Jump offset out of range (-1048576 to +1048575)".to_string());
             }
             offset
         };
@@ -702,7 +709,7 @@ impl Assembler {
             Format::I => {
                 let rd = inst.rd.unwrap_or(0) & 0x1F;
                 let rs1 = inst.rs1.unwrap_or(0) & 0x1F;
-                let imm = (inst.immediate.unwrap_or(0) & 0xFFF) as u32;
+                let imm = ((inst.immediate.unwrap_or(0) << 20) >> 20) as u32;
                 let funct3 = inst.info.funct3.unwrap_or(0) & 0x7;
                 
                 (imm << 20) | (rs1 << 15) | (funct3 << 12) | 
@@ -711,7 +718,7 @@ impl Assembler {
             Format::S => {
                 let rs1 = inst.rs1.unwrap_or(0) & 0x1F;
                 let rs2 = inst.rs2.unwrap_or(0) & 0x1F;
-                let imm = inst.immediate.unwrap_or(0) as u32;
+                let imm = ((inst.immediate.unwrap_or(0) << 20) >> 20) as u32;
                 let funct3 = inst.info.funct3.unwrap_or(0) & 0x7;
                 
                 let imm_11_5 = ((imm >> 5) & 0x7F) << 25;
@@ -723,7 +730,7 @@ impl Assembler {
             Format::B => {
                 let rs1 = inst.rs1.unwrap_or(0) & 0x1F;
                 let rs2 = inst.rs2.unwrap_or(0) & 0x1F;
-                let imm = inst.immediate.unwrap_or(0) as u32;
+                let imm = ((inst.immediate.unwrap_or(0) >> 1) << 1) as u32;
                 let funct3 = inst.info.funct3.unwrap_or(0) & 0x7;
                 
                 let imm_12 = ((imm >> 12) & 0x1) << 31;
@@ -736,13 +743,13 @@ impl Assembler {
             },
             Format::U => {
                 let rd = inst.rd.unwrap_or(0) & 0x1F;
-                let imm = (inst.immediate.unwrap_or(0) as u32) << 12;
+                let imm = (inst.immediate.unwrap_or(0) as u32) & 0xFFFFF000;
                 
                 imm | (rd << 7) | inst.info.opcode
             },
             Format::J => {
                 let rd = inst.rd.unwrap_or(0) & 0x1F;
-                let imm = inst.immediate.unwrap_or(0) as u32;
+                let imm = ((inst.immediate.unwrap_or(0) >> 1) << 1) as u32;
                 
                 let imm_20 = ((imm >> 20) & 0x1) << 31;
                 let imm_10_1 = ((imm >> 1) & 0x3FF) << 21;
