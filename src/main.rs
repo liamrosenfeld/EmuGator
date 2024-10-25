@@ -17,6 +17,12 @@ fn main() {
 #[component]
 #[allow(non_snake_case)]
 fn App() -> Element {
+    let source = use_signal(|| "test".to_string());
+
+    use_effect(move || {
+        info!("source changed:\n{}", source.read());
+    });
+
     rsx! {
         div {
             class: "flex h-screen w-full",
@@ -24,7 +30,7 @@ fn App() -> Element {
                 class: "w-1/2 p-4",
                 style: "background-color: #1E1E1E",
                 CodeEditor {
-
+                    source: source
                 }
             }
             div {
