@@ -1,6 +1,7 @@
-mod assembler;
+use super::*;
 
-fn main() {
+#[test]
+fn assembler_roundtrip() {
     let _test_program = r#"
 .data
 message: .string "test\n"
@@ -93,7 +94,7 @@ branch_target6:
     ADDI x5, x6, 10
 "#;
 
-let _simple_loop_program = r#"
+    let _simple_loop_program = r#"
 .data
 result: .word 6   # Allocate space to store final result
 result2: .word 5  # Allocate a second word for fun for this test
@@ -120,12 +121,12 @@ loop:
     SW x6, result2    # Store x6 at address in x7
 "#;
 
-    match assembler::get_emulator_maps(_simple_loop_program) {
+    match get_emulator_maps(_simple_loop_program) {
         Ok((inst_mem, source_map, data_mem)) => {
             // inst_mem: BTreeMap<u32, u8> - instruction memory
             // source_map: BTreeMap<u32, usize> - source line mapping
             // data_mem: BTreeMap<u32, u8> - data memory
-            
+
             println!("Instruction Memory (Address -> Byte):");
             for (&addr, &byte) in &inst_mem {
                 println!("0x{:08X}: 0x{:02X}", addr, byte);
@@ -147,11 +148,11 @@ loop:
                     inst_mem[&addr],
                     inst_mem[&(addr + 1)],
                     inst_mem[&(addr + 2)],
-                    inst_mem[&(addr + 3)]
+                    inst_mem[&(addr + 3)],
                 ]);
                 println!("0x{:08X}: 0x{:08X}", addr, instruction);
             }
-        },
+        }
         Err(e) => {
             eprintln!("Assembly error: {}", e);
         }

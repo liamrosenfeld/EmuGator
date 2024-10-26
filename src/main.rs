@@ -1,3 +1,4 @@
+mod assembler;
 mod code_editor;
 
 use dioxus::prelude::*;
