@@ -1,5 +1,5 @@
 use super::emulator::{EmulatorState, InstructionHandler};
-use super::datapath::CVE2Datapath;
+use super::datapath::CVE2Pipeline;
 
 pub type XLEN = i32;
 

@@ -40,3 +40,25 @@ pub struct CVE2Datapath {
     // Debug Interface
     debug_req_i: bool, // Input signal indicating a debug request.
 }
+
+pub struct CVE2Pipeline {
+    IF: u32, // Instruction Fetch Buffer
+    ID: u32, // Instruction Decode Buffer
+    datapath: CVE2Datapath,
+}
+
+impl CVE2Pipeline {
+    fn fillIF(&mut self) {
+        // Fill the IF buffer if the instruction was requested and granted
+        if self.datapath.instr_gnt_i && self.datapath.instr_req_o {
+            self.IF = self.datapath.instr_rdata_i;
+        }
+    }
+
+    fn fillID(&mut self) {
+        // Fill the ID buffer if the instruction is valid
+        if self.datapath.instr_rvalid_i {
+            self.IF = self.datapath.instr_rdata_i;
+        }
+    }
+}
