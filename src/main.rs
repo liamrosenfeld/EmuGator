@@ -1,4 +1,8 @@
 #![allow(non_snake_case)]
+#![feature(coroutines)]
+#![feature(coroutine_trait)]
+#![feature(stmt_expr_attributes)]
+
 mod emulator;
 
 use dioxus::prelude::*;
