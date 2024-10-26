@@ -1,0 +1,42 @@
+| #  | Instruction Name | Format  | Example                   | OpCode  | Funct3 | Funct7 |
+|----|------------------|---------|---------------------------|---------|--------|--------|
+| 1  | ADDI             | I-type  | ADDI x1, x2, 10           | 0010011 | 0x0    | -      |
+| 2  | SLTI             | I-type  | SLTI x1, x2, 10           | 0010011 | 0x2    | -      |
+| 3  | SLTIU            | I-type  | SLTIU x1, x2, 10          | 0010011 | 0x3    | -      |
+| 4  | ANDI             | I-type  | ANDI x1, x2, 0xFF         | 0010011 | 0x7    | -      |
+| 5  | ORI              | I-type  | ORI x1, x2, 0xFF          | 0010011 | 0x6    | -      |
+| 6  | XORI             | I-type  | XORI x1, x2, 0xFF         | 0010011 | 0x4    | -      |
+| 7  | SLLI             | I-type  | SLLI x1, x2, 2            | 0010011 | 0x1    | 0x00   |
+| 8  | SRLI             | I-type  | SRLI x1, x2, 2            | 0010011 | 0x5    | 0x00   |
+| 9  | SRAI             | I-type  | SRAI x1, x2, 2            | 0010011 | 0x5    | 0x20   |
+| 10 | LUI              | U-type  | LUI x1, 0xFFF             | 0110111 | -      | -      |
+| 11 | AUIPC            | U-type  | AUIPC x1, 0xFFF           | 0010111 | -      | -      |
+| 12 | ADD              | R-type  | ADD x1, x2, x3            | 0110011 | 0x0    | 0x00   |
+| 13 | SUB              | R-type  | SUB x1, x2, x3            | 0110011 | 0x0    | 0x20   |
+| 14 | SLT              | R-type  | SLT x1, x2, x3            | 0110011 | 0x2    | 0x00   |
+| 15 | SLTU             | R-type  | SLTU x1, x2, x3           | 0110011 | 0x3    | 0x00   |
+| 16 | AND              | R-type  | AND x1, x2, x3            | 0110011 | 0x7    | 0x00   |
+| 17 | OR               | R-type  | OR x1, x2, x3             | 0110011 | 0x6    | 0x00   |
+| 18 | XOR              | R-type  | XOR x1, x2, x3            | 0110011 | 0x4    | 0x00   |
+| 19 | SLL              | R-type  | SLL x1, x2, x3            | 0110011 | 0x1    | 0x00   |
+| 20 | SRL              | R-type  | SRL x1, x2, x3            | 0110011 | 0x5    | 0x00   |
+| 21 | SRA              | R-type  | SRA x1, x2, x3            | 0110011 | 0x5    | 0x20   |
+| 22 | JAL              | J-type  | JAL x1, 0x100             | 1101111 | -      | -      |
+| 23 | JALR             | I-type  | JALR x1, x2, 0x100        | 1100111 | 0x0    | -      |
+| 24 | BEQ              | B-type  | BEQ x1, x2, label         | 1100011 | 0x0    | -      |
+| 25 | BNE              | B-type  | BNE x1, x2, label         | 1100011 | 0x1    | -      |
+| 26 | BLT              | B-type  | BLT x1, x2, label         | 1100011 | 0x4    | -      |
+| 27 | BLTU             | B-type  | BLTU x1, x2, label        | 1100011 | 0x6    | -      |
+| 28 | BGE              | B-type  | BGE x1, x2, label         | 1100011 | 0x5    | -      |
+| 29 | BGEU             | B-type  | BGEU x1, x2, label        | 1100011 | 0x7    | -      |
+| 30 | LW               | I-type  | LW x1, 0(x2)              | 0000011 | 0x2    | -      |
+| 31 | LH               | I-type  | LH x1, 0(x2)              | 0000011 | 0x1    | -      |
+| 32 | LHU              | I-type  | LHU x1, 0(x2)             | 0000011 | 0x5    | -      |
+| 33 | LB               | I-type  | LB x1, 0(x2)              | 0000011 | 0x0    | -      |
+| 34 | LBU              | I-type  | LBU x1, 0(x2)             | 0000011 | 0x4    | -      |
+| 35 | SW               | S-type  | SW x1, 0(x2)              | 0100011 | 0x2    | -      |
+| 36 | SH               | S-type  | SH x1, 0(x2)              | 0100011 | 0x1    | -      |
+| 37 | SB               | S-type  | SB x1, 0(x2)              | 0100011 | 0x0    | -      |
+| 38 | FENCE            | I-type  | FENCE                     | 0001111 | 0x0    | -      |
+| 39 | ECALL            | I-type  | ECALL                     | 1110011 | 0x0    | -      |
+| 40 | EBREAK           | I-type  | EBREAK                    | 1110011 | 0x0    | -      |
