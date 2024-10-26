@@ -37,7 +37,7 @@ A lot of the assembler code is redundant since every supported instruction requi
 
 ## Known Bugs
 - Proper communication between UI, emulator, and assembler have not been established.
-- Assembler does not work for I-instructions that aren't the typical format
+- Assembler does not work for I-instructions that aren't the typical format such as FENCE
 - Code is not properly tested. There are likely unnoticed bugs.
 
 ## Development
