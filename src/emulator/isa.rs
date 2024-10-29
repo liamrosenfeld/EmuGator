@@ -145,194 +145,245 @@ impl Instruction {
     }
 }
 
-fn LUI(inst: Instruction, state: EmulatorState) -> EmulatorState {
+// The underscores and allow dead code are used to suppress a huge flood of warnings.
+// They should be removed as each function is implemented
+
+#[allow(dead_code)]
+fn LUI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn AUIPC(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn AUIPC(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn JAL(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn JAL(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn JALR(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn JALR(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn BEQ(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn BEQ(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn BNE(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn BNE(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
-              
-fn BLT(inst: Instruction, state: EmulatorState) -> EmulatorState {
-    todo!()
-}
-
-fn BGE(inst: Instruction, state: EmulatorState) -> EmulatorState {
-    todo!()
-}
-
-fn BLTU(inst: Instruction, state: EmulatorState) -> EmulatorState {
+      
+#[allow(dead_code)]        
+fn BLT(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn BGEU(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn BGE(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn LB(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn BLTU(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn LH(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn BGEU(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn LW(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn LB(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn LBU(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn LH(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn LHU(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn LW(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn SB(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn LBU(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn SH(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn LHU(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn SW(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn SB(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn ADDI(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn SH(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn SLTI(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn SW(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn SLTIU(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn ADDI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn XORI(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn SLTI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn ORI(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn SLTIU(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn ANDI(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn XORI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn SLLI(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn ORI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn SRLI(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn ANDI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn SRAI(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn SLLI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn ADD(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn SRLI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn SUB(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn SRAI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn SLL(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn ADD(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn SLT(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn SUB(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn SLTU(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn SLL(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn XOR(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn SLT(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn SRL(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn SLTU(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn SRA(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn XOR(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn OR(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn SRL(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn AND(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn SRA(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn FENCE(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn OR(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn FENCE_TSO(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn AND(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn PAUSE(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn FENCE(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn ECALL(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn FENCE_TSO(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn EBREAK(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn PAUSE(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn CSRRW(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn ECALL(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn CSRRS(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn EBREAK(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn CSRRC(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn CSRRW(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn CSRRWI(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn CSRRS(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn CSRRSI(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn CSRRC(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }
 
-fn CSRRCI(inst: Instruction, state: EmulatorState) -> EmulatorState {
+#[allow(dead_code)]
+fn CSRRWI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+    todo!()
+}
+
+#[allow(dead_code)]
+fn CSRRSI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+    todo!()
+}
+
+#[allow(dead_code)]
+fn CSRRCI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
     todo!()
 }

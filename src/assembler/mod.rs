@@ -15,6 +15,7 @@ struct DataItem {
     values: Vec<u8>,
 }
 
+// is this enum a copy of the InstructionFormat enum in isa.rs?
 #[derive(Debug, Clone, PartialEq)]
 pub enum Format {
     R,
