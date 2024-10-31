@@ -1,9 +1,12 @@
 use dioxus::prelude::*;
 
 mod monaco_editor;
+mod highlight;
 
 use monaco::sys::editor::IEditorMinimapOptions;
 use monaco_editor::MonacoEditor;
+
+pub use highlight::register_riscv_language;
 
 /// A wrapper around the Monaco editor with our expected functionality
 #[component]
@@ -12,7 +15,7 @@ pub fn CodeEditor(mut source: Signal<String>) -> Element {
     // basic model
     // TODO: support external changes to source being reflected in the model
     let model =
-        use_signal(|| monaco::api::TextModel::create(source.peek().as_str(), None, None).unwrap());
+        use_signal(|| monaco::api::TextModel::create(source.peek().as_str(), Some("riscv"), None).unwrap());
 
     let mut source_sync = use_effect(move || {
         *source.write() = model().get_value();
