@@ -1,4 +1,4 @@
-#![allow(non_snake_case)]
+#![allow(non_snake_case, unused)]
 #![feature(coroutines)]
 #![feature(coroutine_trait)]
 #![feature(stmt_expr_attributes)]

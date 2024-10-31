@@ -132,242 +132,194 @@ impl Instruction {
     }
 }
 
-#[allow(dead_code)]
 fn LUI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn AUIPC(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn JAL(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn JALR(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn BEQ(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn BNE(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
               
-#[allow(dead_code)]
 fn BLT(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn BGE(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn BLTU(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn BGEU(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn LB(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn LH(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn LW(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn LBU(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn LHU(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn SB(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn SH(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn SW(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn ADDI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn SLTI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn SLTIU(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn XORI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn ORI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn ANDI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn SLLI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn SRLI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn SRAI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn ADD(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn SUB(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn SLL(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn SLT(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn SLTU(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn XOR(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn SRL(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn SRA(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn OR(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn AND(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn FENCE(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn FENCE_TSO(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn PAUSE(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn ECALL(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn EBREAK(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn CSRRW(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn CSRRS(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn CSRRC(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn CSRRWI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn CSRRSI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
-#[allow(dead_code)]
 fn CSRRCI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
