@@ -1,22 +1,9 @@
-use super::emulator::{EmulatorState, InstructionHandler};
-use super::datapath::CVE2Pipeline;
+use super::{EmulatorState, InstructionHandler, bits};
 
-pub type XLEN = i32;
+pub type XLEN = u32;
 
-macro_rules! bits {
-    ( $val:expr,$start_bit:expr,$width:expr ) => {
-        { ($val >> $start_bit) & 2^$width }
-    };
-    ( $val:expr,$end_bit:expr;$start_bit:expr ) => {
-        bits!($val,$start_bit,$end_bit-$start_bit+1)
-    };
-    ( $val:expr,$bit:expr ) => {
-        bits!($val,$bit,1)
-    }
-}
-
-pub fn get_handler(inst: Instruction) -> Result<InstructionHandler, ()> {
-    match (inst.opcode(), inst.funct3(), inst.funct7()) {
+pub fn get_handler(instr: Instruction) -> Result<InstructionHandler, ()> {
+    match (instr.opcode(), instr.funct3(), instr.funct7()) {
         (0b0110111,     _,         _) => Ok(LUI),
         (0b0010111,     _,         _) => Ok(AUIPC),
         (0b1101111,     _,         _) => Ok(JAL),
@@ -54,12 +41,12 @@ pub fn get_handler(inst: Instruction) -> Result<InstructionHandler, ()> {
         (0b0110011, 0b101, 0b0100000) => Ok(SRA),
         (0b0110011, 0b110, 0b0000000) => Ok(OR),
         (0b0110011, 0b111, 0b0000000) => Ok(AND),
-        (0b0001111, 0b000,         _) => match inst.inst {
+        (0b0001111, 0b000,         _) => match instr.instr {
             0b1000_0011_0011_00000_000_00000_0001111 => Ok(FENCE_TSO),
             0b0000_0001_0000_00000_000_00000_0001111 => Ok(PAUSE),
             _ => Ok(FENCE)
         },
-        (0b1110011, 0b000, 0b0000000) => match inst.inst {
+        (0b1110011, 0b000, 0b0000000) => match instr.instr {
             0b0000_0000_0000_00000_000_00000_1110011 => Ok(ECALL),
             0b0000_0000_0001_00000_000_00000_1110011 => Ok(EBREAK),
             _ => Err(())
@@ -80,310 +67,307 @@ pub enum InstructionFormat {
 
 #[derive(Clone, Copy)]
 pub struct Instruction {
-    inst: u32
+    pub(crate) instr: u32
 }
 
 impl Instruction {
     pub fn opcode(&self) -> u8 {
-        bits!(self.inst,6;0) as u8
+        bits!(self.instr,6;0) as u8
     }
 
     fn immediate(&self, format: InstructionFormat) -> Result<i32, ()> {
         match format {
             InstructionFormat::I => Ok((
-                bits!(self.inst,31) * (2^21 << 11) +
-                bits!(self.inst,30;25) << 5  + 
-                bits!(self.inst,24;21) << 1  +
-                bits!(self.inst,20   )
+                bits!(self.instr,31   ) * ((2^21 - 1) << 11) +
+                bits!(self.instr,30;25) << 5  + 
+                bits!(self.instr,24;21) << 1  +
+                bits!(self.instr,20   )
             ) as i32),
             InstructionFormat::S => Ok((
-                bits!(self.inst,31) * (2^21 << 11) +
-                bits!(self.inst,30;25) << 5  +
-                bits!(self.inst,11;8 ) << 1  +
-                bits!(self.inst,7    )
+                bits!(self.instr,31   ) * ((2^21 - 1) << 11) +
+                bits!(self.instr,30;25) << 5  +
+                bits!(self.instr,11;8 ) << 1  +
+                bits!(self.instr,7    )
             ) as i32),
             InstructionFormat::B => Ok((
-                bits!(self.inst,31) * (2^20 << 12) +
-                bits!(self.inst,7    ) << 11 + 
-                bits!(self.inst,30;25) << 5  +
-                bits!(self.inst,11;8 ) << 1
+                bits!(self.instr,31   ) * ((2^20 - 1) << 12) +
+                bits!(self.instr,7    ) << 11 + 
+                bits!(self.instr,30;25) << 5  +
+                bits!(self.instr,11;8 ) << 1
             ) as i32),
             InstructionFormat::U => Ok((
-                bits!(self.inst,31) * (2^1 << 31) +
-                bits!(self.inst,30;20) << 20 +
-                bits!(self.inst,19;12) << 12
+                bits!(self.instr,31   ) * ((2^1 - 1) << 31) +
+                bits!(self.instr,30;20) << 20 +
+                bits!(self.instr,19;12) << 12
             ) as i32),
             InstructionFormat::J => Ok((
-                bits!(self.inst,31) * (2^12 << 20) +
-                bits!(self.inst,19;12) << 12 +
-                bits!(self.inst,20   ) << 11 +
-                bits!(self.inst,30;25) << 5  +
-                bits!(self.inst,24;21) << 1
+                bits!(self.instr,31   ) * ((2^12 - 1) << 20) +
+                bits!(self.instr,19;12) << 12 +
+                bits!(self.instr,20   ) << 11 +
+                bits!(self.instr,30;25) << 5  +
+                bits!(self.instr,24;21) << 1
             ) as i32),
             _ => Err(()) 
         }
     }
     
     fn rd(&self) -> u8 {
-        bits!(self.inst,7,5) as u8
+        bits!(self.instr,7,5) as u8
     }
 
     fn rs1(&self) -> u8 {
-        bits!(self.inst,15,5) as u8
+        bits!(self.instr,15,5) as u8
     }
 
     fn rs2(&self) -> u8 {
-        bits!(self.inst,20,5) as u8
+        bits!(self.instr,20,5) as u8
     }
 
     fn funct3(&self) -> u8 {
-        bits!(self.inst, 12, 3) as u8
+        bits!(self.instr, 12, 3) as u8
     }
 
     fn funct7(&self) -> u8 {
-        bits!(self.inst, 25, 7) as u8
+        bits!(self.instr, 25, 7) as u8
     }
 }
 
-// The underscores and allow dead code are used to suppress a huge flood of warnings.
-// They should be removed as each function is implemented
-
 #[allow(dead_code)]
-fn LUI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn LUI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn AUIPC(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn AUIPC(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn JAL(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn JAL(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn JALR(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn JALR(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn BEQ(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn BEQ(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn BNE(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn BNE(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
-      
-#[allow(dead_code)]        
-fn BLT(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+              
+#[allow(dead_code)]
+fn BLT(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn BGE(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn BGE(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn BLTU(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn BLTU(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn BGEU(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn BGEU(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn LB(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn LB(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn LH(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn LH(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn LW(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn LW(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn LBU(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn LBU(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn LHU(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn LHU(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn SB(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn SB(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn SH(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn SH(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn SW(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn SW(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn ADDI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn ADDI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn SLTI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn SLTI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn SLTIU(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn SLTIU(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn XORI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn XORI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn ORI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn ORI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn ANDI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn ANDI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn SLLI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn SLLI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn SRLI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn SRLI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn SRAI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn SRAI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn ADD(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn ADD(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn SUB(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn SUB(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn SLL(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn SLL(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn SLT(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn SLT(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn SLTU(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn SLTU(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn XOR(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn XOR(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn SRL(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn SRL(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn SRA(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn SRA(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn OR(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn OR(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn AND(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn AND(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn FENCE(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn FENCE(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn FENCE_TSO(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn FENCE_TSO(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn PAUSE(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn PAUSE(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn ECALL(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn ECALL(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn EBREAK(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn EBREAK(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn CSRRW(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn CSRRW(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn CSRRS(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn CSRRS(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn CSRRC(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn CSRRC(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn CSRRWI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn CSRRWI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn CSRRSI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn CSRRSI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
 #[allow(dead_code)]
-fn CSRRCI(_inst: Instruction, _state: EmulatorState) -> EmulatorState {
+fn CSRRCI(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
