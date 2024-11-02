@@ -2,6 +2,131 @@ use super::*;
 use crate::include_test_file;
 
 #[test]
+fn print_some_output() {
+    let simple_loop_program = include_test_file!("simple-loop.s");
+
+    match get_emulator_maps(simple_loop_program) {
+        Ok((inst_mem, source_map, data_mem)) => {
+            // inst_mem: BTreeMap<u32, u8> - instruction memory
+            // source_map: BTreeMap<u32, usize> - source line mapping
+            // data_mem: BTreeMap<u32, u8> - data memory
+
+            println!("Instruction Memory (Address -> Byte):");
+            for (&addr, &byte) in &inst_mem {
+                println!("0x{:08X}: 0x{:02X}", addr, byte);
+            }
+
+            println!("\nSource Map (Address -> Line Number):");
+            for (&addr, &line) in &source_map {
+                println!("0x{:08X}: Line {}", addr, line);
+            }
+
+            println!("\nData Memory (Address -> Byte):");
+            for (&addr, &byte) in &data_mem {
+                println!("0x{:08X}: 0x{:02X}", addr, byte);
+            }
+
+            println!("\nReconstructed 32-bit Instructions:");
+            for &addr in source_map.keys() {
+                let instruction = u32::from_le_bytes([
+                    inst_mem[&addr],
+                    inst_mem[&(addr + 1)],
+                    inst_mem[&(addr + 2)],
+                    inst_mem[&(addr + 3)],
+                ]);
+                println!("0x{:08X}: 0x{:08X}", addr, instruction);
+            }
+        }
+        Err(e) => {
+            eprintln!("Assembly error: {}", e);
+        }
+    }
+}
+
+#[test]
+fn assembler_different_locations() {
+    let program = include_test_file!("different-locations.s");
+
+    match get_emulator_maps(program) {
+        Ok((inst_mem, source_map, data_mem)) => {
+            // Test instruction memory
+            let expected_instructions: Vec<(u32, u8)> = vec![
+                (0x1000, 0x83), (0x1001, 0x20), (0x1002, 0x00), (0x1003, 0x00),
+                (0x1004, 0x03), (0x1005, 0x21), (0x1006, 0x40), (0x1007, 0x00),
+                (0x1008, 0xB3), (0x1009, 0x81), (0x100A, 0x20), (0x100B, 0x00),
+                (0x100C, 0x23), (0x100D, 0x24), (0x100E, 0x30), (0x100F, 0x00),
+            ];
+            
+            for (addr, expected_byte) in expected_instructions {
+                assert_eq!(
+                    inst_mem.get(&addr),
+                    Some(&expected_byte),
+                    "Mismatch in instruction memory at address 0x{:08X}",
+                    addr
+                );
+            }
+
+            // Test source map
+            let expected_source_lines: Vec<(u32, usize)> = vec![
+                (0x1000, 3),
+                (0x1004, 4),
+                (0x1008, 5),
+                (0x100C, 6),
+            ];
+
+            for (addr, expected_line) in expected_source_lines {
+                assert_eq!(
+                    source_map.get(&addr),
+                    Some(&expected_line),
+                    "Mismatch in source map at address 0x{:08X}",
+                    addr
+                );
+            }
+
+            // Test data memory
+            let expected_data: Vec<(u32, u8)> = vec![
+                (0x2000, 0x2A), (0x2001, 0x00), (0x2002, 0x00), (0x2003, 0x00),  // 42
+                (0x2004, 0x3A), (0x2005, 0x00), (0x2006, 0x00), (0x2007, 0x00),  // 58
+                (0x2008, 0x00), (0x2009, 0x00), (0x200A, 0x00), (0x200B, 0x00),  // 0
+            ];
+
+            for (addr, expected_byte) in expected_data {
+                assert_eq!(
+                    data_mem.get(&addr),
+                    Some(&expected_byte),
+                    "Mismatch in data memory at address 0x{:08X}",
+                    addr
+                );
+            }
+
+            // Test reconstructed 32-bit instructions
+            let expected_32bit_instructions: Vec<(u32, u32)> = vec![
+                (0x1000, 0x00002083),  // lw x1, value1
+                (0x1004, 0x00402103),  // lw x2, value2
+                (0x1008, 0x002081B3),  // add x3, x1, x2
+                (0x100C, 0x00302423),  // sw x3, result
+            ];
+
+            for (addr, expected_instruction) in expected_32bit_instructions {
+                let actual_instruction = u32::from_le_bytes([
+                    *inst_mem.get(&addr).unwrap(),
+                    *inst_mem.get(&(addr + 1)).unwrap(),
+                    *inst_mem.get(&(addr + 2)).unwrap(),
+                    *inst_mem.get(&(addr + 3)).unwrap(),
+                ]);
+                assert_eq!(
+                    actual_instruction,
+                    expected_instruction,
+                    "Mismatch in reconstructed instruction at address 0x{:08X}",
+                    addr
+                );
+            }
+        }
+        Err(e) => panic!("Assembly failed: {}", e),
+    }
+}
+
+#[test]
 fn assembler_simple_loop() {
     let simple_loop_program = include_test_file!("simple-loop.s");
 
