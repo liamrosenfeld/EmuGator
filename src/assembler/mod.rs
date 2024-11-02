@@ -704,11 +704,44 @@ impl Assembler {
     fn parse_i_type(&self, parts: &[&str], info: InstructionInfo) -> Result<Instruction, String> {
         match info.opcode {
             0b0000011 => self.parse_load_type(&parts, info),
+            0b1110011 => {
+                // Special handling for ECALL/EBREAK
+                if parts.len() != 1 {
+                    return Err("ECALL/EBREAK instructions take no operands".to_string());
+                }
+                
+                Ok(Instruction {
+                    info,
+                    rd: Some(0),      // x0
+                    rs1: Some(0),     // x0
+                    rs2: None,
+                    immediate: Some(match parts[0] {
+                        "ECALL" => 0,
+                        "EBREAK" => 1,
+                        _ => unreachable!(),
+                    }),
+                })
+            }
+            0b0001111 => {
+                // Special handling for FENCE
+                if parts.len() != 1 {
+                    return Err("FENCE instruction takes no operands".to_string());
+                }
+                
+                Ok(Instruction {
+                    info,
+                    rd: Some(0),      // x0
+                    rs1: Some(0),     // x0
+                    rs2: None,
+                    immediate: Some(0),
+                })
+            }
             _ => {
+                // Regular I-type instructions
                 if parts.len() != 4 {
                     return Err("I-type instructions need 2 registers and an immediate".to_string());
                 }
-
+    
                 Ok(Instruction {
                     info,
                     rd: Some(self.parse_register(parts[1])?),
