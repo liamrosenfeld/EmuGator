@@ -141,9 +141,7 @@ fn AUIPC(instr: &Instruction, state: &mut EmulatorState) {
 }
 
 fn JAL(instr: &Instruction, state: &mut EmulatorState) {
-    //! Am I properly handling the immediate as sign extended?
-    //! What about linking???
-    //! PUSH ONTO RETURN ADDRESS STACK WHEN rd = x1/x5
+    // TODO: Push onto Return Address stack when rd = x1/x5
     let immed = (instr.immediate(InstructionFormat::J)).unwrap();
     let new_pc = state.pc.checked_add_signed(immed).unwrap();
     
@@ -160,7 +158,7 @@ fn JAL(instr: &Instruction, state: &mut EmulatorState) {
 }
 
 fn JALR(instr: &Instruction, state: &mut EmulatorState) {
-    //! return address stack stuff!!
+    // TODO: Push onto RAS
     let immed = (instr.immediate(InstructionFormat::I)).unwrap();
     let new_pc = state.pc.checked_add_signed(immed).unwrap() + state.x[instr.rs1() as usize] & 0xFFFFFFFE;
 
