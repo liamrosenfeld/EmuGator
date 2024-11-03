@@ -133,11 +133,19 @@ impl Instruction {
 }
 
 fn LUI(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+    let rd = instr.rd() as usize;
+    let immediate = instr.immediate(InstructionFormat::U).unwrap() as i32;
+
+    state.x[rd] = immediate as u32;
 }
 
 fn AUIPC(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+    let rd = instr.rd() as usize;
+    let immediate = instr.immediate(InstructionFormat::U).unwrap() as i32;
+
+    let result = state.pc as i32 + immediate;
+
+    state.x[rd] = result as u32;
 }
 
 fn JAL(instr: &Instruction, state: &mut EmulatorState) {
