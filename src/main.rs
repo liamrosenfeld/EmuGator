@@ -1,7 +1,4 @@
-#![allow(non_snake_case, unused)]
-#![feature(coroutines)]
-#![feature(coroutine_trait)]
-#![feature(stmt_expr_attributes)]
+#[allow(non_snake_case, unused)]
 
 mod emulator;
 mod assembler;
@@ -18,13 +15,14 @@ fn main() {
     // Init logger
     dioxus_logger::init(Level::INFO).expect("failed to init logger");
     info!("starting app");
+    code_editor::register_riscv_language();
     launch(App);
 }
 
 #[component]
 #[allow(non_snake_case)]
 fn App() -> Element {
-    let source = use_signal(|| "test".to_string());
+    let source = use_signal(|| include_test_file!("syntax-check.s").to_string());
 
     use_effect(move || {
         info!("source changed:\n{}", source.read());
@@ -93,4 +91,11 @@ fn TestComponent() -> Element {
 fn testing_function() {
     let test = 5;
     info!("button pressed! {}", test);
+}
+
+/// helper macro to include test files
+#[macro_export] macro_rules! include_test_file {
+    ($file_name:literal) => {
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/test-files/", $file_name))
+    };
 }
