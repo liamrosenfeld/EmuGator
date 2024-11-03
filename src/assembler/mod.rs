@@ -3,7 +3,7 @@ mod tests;
 
 pub use std::collections::{BTreeMap, HashMap};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 enum Section {
     Data,
     Text,
@@ -446,21 +446,57 @@ impl Assembler {
         }
     }
 
+    fn parse_section_directive(&self, line: &str) -> Option<(Section, u32)> {
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.is_empty() || !parts[0].starts_with('.') {
+            return None;
+        }
+    
+        let section = match parts[0] {
+            ".data" => Some(Section::Data),
+            ".text" => Some(Section::Text),
+            _ => None,
+        }?;
+    
+        let address = if parts.len() > 1 {
+            // Parse hex or decimal address
+            if parts[1].starts_with("0x") {
+                u32::from_str_radix(&parts[1][2..], 16).ok()?
+            } else {
+                parts[1].parse().ok()?
+            }
+        } else {
+            0 // Default address
+        };
+    
+        Some((section, address))
+    }
+
     fn assemble(&self, program: &str) -> Result<AssembledProgram, String> {
         let mut assembled = AssembledProgram::new();
-        let mut current_section = Section::Text; // Default to Text section
+        let mut current_section = Section::Text;
         let mut text_address = 0;
         let mut data_address = 0;
-
+    
         // First pass: collect labels and process data
         for (line_num, line) in program.lines().enumerate() {
             let line = self.clean_line(line);
             if line.is_empty() {
                 continue;
             }
-
+    
             let (label_opt, content) = self.split_label_and_content(&line);
-
+    
+            // Handle section directives with optional address
+            if let Some((section, address)) = self.parse_section_directive(&content) {
+                current_section = section;
+                match section {
+                    Section::Text => text_address = address,
+                    Section::Data => data_address = address,
+                }
+                continue;
+            }
+    
             // Handle label if present
             if let Some(label) = label_opt {
                 match current_section {
@@ -472,30 +508,19 @@ impl Assembler {
                     }
                 }
             }
-
+    
             // If there's no content after the label, continue to next line
             if content.is_empty() {
                 continue;
             }
-
-            // Handle section directives
+    
+            // Handle data directives
             if content.starts_with('.') {
-                if content == ".data" {
-                    current_section = Section::Data;
-                    continue;
-                }
-                if content == ".text" {
-                    current_section = Section::Text;
-                    continue;
-                }
-
                 if current_section == Section::Data {
-                    // Handle data directive while in data section
                     if let Ok(Some((_, data))) = self.parse_data_line(&content) {
                         assembled.add_data(data_address, &data.values);
                         data_address += data.size as u32;
                     }
-                    continue;
                 } else {
                     return Err(format!(
                         "Data directive '{}' outside of .data section on line {}",
@@ -503,29 +528,40 @@ impl Assembler {
                         line_num + 1
                     ));
                 }
+                continue;
             }
-
+    
             // Count instruction size for text section
             if current_section == Section::Text && !content.is_empty() {
                 text_address += 4;
             }
         }
-
+    
         // Second pass: assemble instructions
-        current_section = Section::Text; // Reset to default Text section
-        text_address = 0;
-
+        current_section = Section::Text;
+        text_address = assembled.get_section_start(Section::Text);
+    
         for (line_num, line) in program.lines().enumerate() {
             let line = self.clean_line(line);
             if line.is_empty() {
                 continue;
             }
-
+    
             let (_, content) = self.split_label_and_content(&line);
-            if content.is_empty() || content == ".data" || content == ".text" {
+            if content.is_empty() {
                 continue;
             }
-
+    
+            // Handle section directives
+            if let Some((section, address)) = self.parse_section_directive(&content) {
+                current_section = section;
+                match section {
+                    Section::Text => text_address = address,
+                    Section::Data => (),
+                }
+                continue;
+            }
+    
             if current_section == Section::Text && !content.starts_with('.') {
                 match self.parse_instruction(
                     &content,
@@ -542,7 +578,7 @@ impl Assembler {
                 }
             }
         }
-
+    
         Ok(assembled)
     }
 
@@ -704,11 +740,44 @@ impl Assembler {
     fn parse_i_type(&self, parts: &[&str], info: InstructionInfo) -> Result<Instruction, String> {
         match info.opcode {
             0b0000011 => self.parse_load_type(&parts, info),
+            0b1110011 => {
+                // Special handling for ECALL/EBREAK
+                if parts.len() != 1 {
+                    return Err("ECALL/EBREAK instructions take no operands".to_string());
+                }
+                
+                Ok(Instruction {
+                    info,
+                    rd: Some(0),      // x0
+                    rs1: Some(0),     // x0
+                    rs2: None,
+                    immediate: Some(match parts[0] {
+                        "ECALL" => 0,
+                        "EBREAK" => 1,
+                        _ => unreachable!(),
+                    }),
+                })
+            }
+            0b0001111 => {
+                // Special handling for FENCE
+                if parts.len() != 1 {
+                    return Err("FENCE instruction takes no operands".to_string());
+                }
+                
+                Ok(Instruction {
+                    info,
+                    rd: Some(0),      // x0
+                    rs1: Some(0),     // x0
+                    rs2: None,
+                    immediate: Some(0),
+                })
+            }
             _ => {
+                // Regular I-type instructions
                 if parts.len() != 4 {
                     return Err("I-type instructions need 2 registers and an immediate".to_string());
                 }
-
+    
                 Ok(Instruction {
                     info,
                     rd: Some(self.parse_register(parts[1])?),
@@ -982,6 +1051,13 @@ impl AssembledProgram {
             source_map: BTreeMap::new(),
             labels: HashMap::new(),
             data_labels: HashMap::new(),
+        }
+    }
+
+    fn get_section_start(&self, section: Section) -> u32 {
+        match section {
+            Section::Text => self.source_map.keys().next().copied().unwrap_or(0),
+            Section::Data => self.data_memory.keys().next().copied().unwrap_or(0),
         }
     }
 

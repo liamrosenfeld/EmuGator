@@ -149,35 +149,136 @@ fn AUIPC(instr: &Instruction, state: &mut EmulatorState) {
 }
 
 fn JAL(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+    // TODO: Push onto Return Address stack when rd = x1/x5
+    let immed = (instr.immediate(InstructionFormat::J)).unwrap();
+    let new_pc = state.pc.checked_add_signed(immed).unwrap();
+    
+    // if unaligned on 4-byte boundary
+    if(new_pc & 0x00000003 != 0x00){
+        panic!("JAL instruction immediate it not on a 4-byte boundary");
+    }
+    // stores pc+4 into rd
+    let rd = instr.rd() as usize;
+    state.x[rd] = state.pc + 4;
+
+    // update PC
+    state.pc = new_pc;
 }
 
 fn JALR(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+    // TODO: Push onto RAS
+    let immed = (instr.immediate(InstructionFormat::I)).unwrap();
+    let new_pc = state.pc.checked_add_signed(immed).unwrap() + state.x[instr.rs1() as usize] & 0xFFFFFFFE;
+
+    // if unaligned on 4-byte boundary
+    if(new_pc & 0x003 != 0x00){
+        panic!("JAL target addess is not on a 4-byte boundary");
+    }
+
+    // stores pc+4 into rd
+    let rd = instr.rd() as usize;
+    state.x[rd] = state.pc + 4;
+
+    // update PC
+    state.pc = new_pc;
 }
 
 fn BEQ(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+    let immed = (instr.immediate(InstructionFormat::B)).unwrap();
+    let new_pc = state.pc.checked_add_signed(immed).unwrap();
+    
+    // if unaligned on 4-byte boundary
+    if(new_pc & 0x003 != 0x00){
+        panic!("JAL instruction immediate it not on a 4-byte boundary");
+    }
+
+    if(state.x[instr.rs1() as usize] == state.x[instr.rs2() as usize]){
+        // update PC
+        state.pc = new_pc;
+    }
 }
 
 fn BNE(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+    let immed = (instr.immediate(InstructionFormat::B)).unwrap();
+    let new_pc = state.pc.checked_add_signed(immed).unwrap();
+    
+    // if unaligned on 4-byte boundary
+    if(new_pc & 0x003 != 0x00){
+        panic!("JAL instruction immediate it not on a 4-byte boundary");
+    }
+
+    if(state.x[instr.rs1() as usize] != state.x[instr.rs2() as usize]){
+        // update PC
+        state.pc = new_pc;
+    }
 }
-              
+
 fn BLT(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+    let immed = (instr.immediate(InstructionFormat::B)).unwrap();
+    let new_pc = state.pc.checked_add_signed(immed).unwrap();
+    
+    // if unaligned on 4-byte boundary
+    if(new_pc & 0x003 != 0x00){
+        panic!("JAL instruction immediate it not on a 4-byte boundary");
+    }
+
+    if((state.x[instr.rs1() as usize] as i8) < state.x[instr.rs2() as usize] as i8){
+        // update PC
+        state.pc = new_pc;
+    }
 }
 
 fn BGE(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+    let immed = (instr.immediate(InstructionFormat::B)).unwrap();
+    let new_pc = state.pc.checked_add_signed(immed).unwrap();
+    
+    // if unaligned on 4-byte boundary
+    if(new_pc & 0x003 != 0x00){
+        panic!("JAL instruction immediate it not on a 4-byte boundary");
+    }
+
+    if((state.x[instr.rs1() as usize] as i8) > state.x[instr.rs2() as usize] as i8){
+        // update PC
+        state.pc = new_pc;
+    }
 }
 
 fn BLTU(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+    let immed = (instr.immediate(InstructionFormat::B)).unwrap();
+    let new_pc = state.pc.checked_add_signed(immed).unwrap();
+    
+    // if unaligned on 4-byte boundary
+    if(new_pc & 0x003 != 0x00){
+        panic!("JAL instruction immediate it not on a 4-byte boundary");
+    }
+
+    if(state.x[instr.rs1() as usize] < state.x[instr.rs2() as usize]){
+        // stores pc+4 into rd
+        let rd = instr.rd() as usize;
+        state.x[rd] = state.pc + 4;
+
+        // update PC
+        state.pc = new_pc;
+    }
 }
 
 fn BGEU(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+    let immed = (instr.immediate(InstructionFormat::B)).unwrap();
+    let new_pc = state.pc.checked_add_signed(immed).unwrap();
+    
+    // if unaligned on 4-byte boundary
+    if(new_pc & 0x003 != 0x00){
+        panic!("JAL instruction immediate it not on a 4-byte boundary");
+    }
+
+    if(state.x[instr.rs1() as usize] > state.x[instr.rs2() as usize]){
+        // stores pc+4 into rd
+        let rd = instr.rd() as usize;
+        state.x[rd] = state.pc + 4;
+
+        // update PC
+        state.pc = new_pc;
+    }
 }
 
 fn LB(instr: &Instruction, state: &mut EmulatorState) {

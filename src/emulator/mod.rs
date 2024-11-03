@@ -56,7 +56,7 @@ impl Emulator {
                 valid
             });
 
-            // Write the read dada to the instruction read data lines
+            // Write the read data to the instruction read data lines
             state.pipeline.datapath.instr_rdata_i = u32::from_le_bytes(instr_bytes);
 
             // Set the appropriate flags 
