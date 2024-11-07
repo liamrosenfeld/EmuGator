@@ -37,3 +37,26 @@ macro_rules! include_test_file {
         ))
     };
 }
+
+
+#[test]
+fn test_bits() {
+    let ten = 0b1010;
+
+    assert_eq!(bits!(ten, 0), 0b0);
+    assert_eq!(bits!(ten, 1), 0b1);
+    assert_eq!(bits!(ten, 2), 0b0);
+    assert_eq!(bits!(ten, 3), 0b1);
+
+    assert_eq!(bits!(ten, 0, 2), 0b10);
+    assert_eq!(bits!(ten, 1, 3), 0b101);
+    assert_eq!(bits!(ten, 3;1), 0b101);
+}
+
+
+#[test]
+fn test_bitmask() {
+    assert_eq!(bitmask!(0, 5), 0b11111);
+    assert_eq!(bitmask!(10;5), 0b11111100000);
+    assert_eq!(bitmask!(5), 0b11111);
+}
