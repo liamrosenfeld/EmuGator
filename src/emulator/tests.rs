@@ -1,19 +1,17 @@
-use std::io::Read;
-
-use dioxus::html::data;
-use dioxus_logger::tracing::level_filters::STATIC_MAX_LEVEL;
+#![allow(non_snake_case)]
+use crate::isa::{Operands, ISA};
 
 use super::*;
 
-fn write(map: &mut BTreeMap<XLEN, u8>, address: XLEN, bytes: &[u8]) {
+fn write(map: &mut BTreeMap<u32, u8>, address: u32, bytes: &[u8]) {
     for (i, &byte) in bytes.iter().enumerate() {
-        map.insert(address + i as XLEN, byte);
+        map.insert(address + i as u32, byte);
     }
 }
 
-fn populate(map: &mut BTreeMap<XLEN, u8>, instructions: &[Instruction]) {
+fn populate(map: &mut BTreeMap<u32, u8>, instructions: &[Instruction]) {
     for (i, &instruction) in instructions.iter().enumerate() {
-        write(map, (4 * i) as XLEN, &instruction.instr.to_le_bytes());
+        write(map, (4 * i) as u32, &instruction.instr.to_le_bytes());
     }
 }
 
@@ -21,16 +19,24 @@ fn populate(map: &mut BTreeMap<XLEN, u8>, instructions: &[Instruction]) {
 fn test_LUI() {
     let mut emulator: Emulator = Emulator::new();
 
-    let mut instruction_map: BTreeMap<XLEN, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<XLEN, u8> = BTreeMap::new();
+    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
     // LUI ( x1 := 0x12345000)
     populate(
         &mut instruction_map,
         &[
-            Instruction::U(0b0110111, 1, 0x12345000),
-            Instruction::U(0b0110111, 0, 0x12345000)
-        ]
+            ISA::LUI.build(Operands {
+                rd: 1,
+                imm: 0x12345000,
+                ..Default::default()
+            }),
+            ISA::LUI.build(Operands {
+                rd: 0,
+                imm: 0x12345000,
+                ..Default::default()
+            }),
+        ],
     );
 
     // Instruction fetch
@@ -47,15 +53,17 @@ fn test_LUI() {
 fn test_AUIPC() {
     let mut emulator: Emulator = Emulator::new();
 
-    let mut instruction_map: BTreeMap<XLEN, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<XLEN, u8> = BTreeMap::new();
+    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
     // AUIPC ( x1 := PC + 0x12345000)
     populate(
         &mut instruction_map,
-        &[
-            Instruction::U(0b0010111, 1, 0x12345000)
-        ]
+        &[ISA::AUIPC.build(Operands {
+            rd: 1,
+            imm: 0x12345000,
+            ..Default::default()
+        })],
     );
 
     // Instruction fetch
@@ -63,22 +71,28 @@ fn test_AUIPC() {
 
     // After AUIPC, x1 should hold the value (PC + 0x12345000)
     emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[1], emulator.state().pipeline.datapath.instr_addr_o + 0x12345000);
+    assert_eq!(
+        emulator.state().x[1],
+        emulator.state().pipeline.datapath.instr_addr_o + 0x12345000
+    );
 }
 
 #[test]
 fn test_JAL() {
     let mut emulator: Emulator = Emulator::new();
 
-    let mut instruction_map: BTreeMap<XLEN, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<XLEN, u8> = BTreeMap::new();
+    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
     // JAL ( x1 := PC + 4, jump to PC + 0x100)
     populate(
         &mut instruction_map,
-        &[Instruction::J(0b1101111, 1, 0x100)]
+        &[ISA::JAL.build(Operands {
+            rd: 1,
+            imm: 0x100,
+            ..Default::default()
+        })],
     );
-
 
     // Instruction fetch
     emulator.clock(&instruction_map, &mut data_map);
@@ -94,14 +108,19 @@ fn test_JAL() {
 fn test_JALR() {
     let mut emulator: Emulator = Emulator::new();
 
-    let mut instruction_map: BTreeMap<XLEN, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<XLEN, u8> = BTreeMap::new();
+    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
     populate(
         &mut instruction_map,
         &[
-            Instruction::I(0b1100111, 1, 0b000, 2, 0x4) // JALR ( x1 := PC + 4, jump to (x2 + 0x4) & ~1)
-        ] 
+            ISA::JALR.build(Operands {
+                rd: 1,
+                rs1: 2,
+                imm: 0x4,
+                ..Default::default()
+            }), // JALR ( x1 := PC + 4, jump to (x2 + 0x4) & ~1)
+        ],
     );
 
     // Instruction fetch
@@ -111,23 +130,41 @@ fn test_JALR() {
     let pc = emulator.state().pipeline.datapath.instr_addr_o;
     emulator.clock(&instruction_map, &mut data_map);
     assert_eq!(emulator.state().x[1], pc + 4);
-    assert_eq!(emulator.state().pipeline.datapath.instr_addr_o, (pc + emulator.state().x[2] + 0x4) & !1);
+    assert_eq!(
+        emulator.state().pipeline.datapath.instr_addr_o,
+        (pc + emulator.state().x[2] + 0x4) & !1
+    );
 }
 
 #[test]
 fn test_BEQ() {
     let mut emulator: Emulator = Emulator::new();
 
-    let mut instruction_map: BTreeMap<XLEN, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<XLEN, u8> = BTreeMap::new();
+    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
     populate(
         &mut instruction_map,
         &[
-            Instruction::I(0b0010011, 1, 0b000, 0, 1),  // ADDI ( x1 := x0 + 1)
-            Instruction::B(0b1100011, 0b000, 1, 2, 0x10),   // BEQ (branch if x1 == x2)
-            Instruction::B(0b1100011, 0b000, 0, 2, 0x10)    // BEQ (branch if x0 == x2)
-        ]
+            ISA::ADDI.build(Operands {
+                rd: 1,
+                rs1: 0,
+                imm: 1,
+                ..Default::default()
+            }), // ADDI ( x1 := x0 + 1)
+            ISA::BEQ.build(Operands {
+                rs1: 1,
+                rs2: 2,
+                imm: 0x10,
+                ..Default::default()
+            }), // BEQ (branch if x1 == x2)
+            ISA::BEQ.build(Operands {
+                rs1: 0,
+                rs2: 2,
+                imm: 0x10,
+                ..Default::default()
+            }), // BEQ (branch if x0 == x2)
+        ],
     );
 
     // Instruction fetch
@@ -150,16 +187,31 @@ fn test_BEQ() {
 fn test_BNE() {
     let mut emulator: Emulator = Emulator::new();
 
-    let mut instruction_map: BTreeMap<XLEN, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<XLEN, u8> = BTreeMap::new();
+    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
     populate(
         &mut instruction_map,
         &[
-            Instruction::I(0b0010011, 1, 0b000, 0, 1),  // ADDI ( x1 := x0 + 1)
-            Instruction::B(0b1100011, 0b001, 0, 2, 0x10),   // BNE (branch if x0 != x2)
-            Instruction::B(0b1100011, 0b001, 1, 2, 0x10),   // BNE (branch if x1 != x2)
-        ]
+            ISA::ADDI.build(Operands {
+                rd: 1,
+                rs1: 0,
+                imm: 1,
+                ..Default::default()
+            }), // ADDI ( x1 := x0 + 1)
+            ISA::BNE.build(Operands {
+                rs1: 1,
+                rs2: 2,
+                imm: 0x10,
+                ..Default::default()
+            }), // BNE (branch if x1 != x2)
+            ISA::BNE.build(Operands {
+                rs1: 0,
+                rs2: 2,
+                imm: 0x10,
+                ..Default::default()
+            }), // BNE (branch if x0 != x2)
+        ],
     );
 
     // Instruction fetch
@@ -182,16 +234,31 @@ fn test_BNE() {
 fn test_BLT() {
     let mut emulator: Emulator = Emulator::new();
 
-    let mut instruction_map: BTreeMap<XLEN, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<XLEN, u8> = BTreeMap::new();
+    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
     populate(
         &mut instruction_map,
         &[
-            Instruction::I(0b0010011, 1, 0b000, 0, 1),  // ADDI ( x1 := x0 + 1)
-            Instruction::B(0b1100011, 0b100, 0, 2, 0x10),   // BLT (branch if x0 < x2)
-            Instruction::B(0b1100011, 0b100, 2, 1, 0x10),   // BLT (branch if x2 < x1)
-        ]
+            ISA::ADDI.build(Operands {
+                rd: 1,
+                rs1: 0,
+                imm: 1,
+                ..Default::default()
+            }), // ADDI ( x1 := x0 + 1)
+            ISA::BLT.build(Operands {
+                rs1: 0,
+                rs2: 2,
+                imm: 0x10,
+                ..Default::default()
+            }), // BLT (branch if x0 < x2)
+            ISA::BLT.build(Operands {
+                rs1: 2,
+                rs2: 1,
+                imm: 0x10,
+                ..Default::default()
+            }), // BLT (branch if x2 < x1)
+        ],
     );
 
     // Instruction fetch
@@ -214,16 +281,31 @@ fn test_BLT() {
 fn test_BGE() {
     let mut emulator: Emulator = Emulator::new();
 
-    let mut instruction_map: BTreeMap<XLEN, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<XLEN, u8> = BTreeMap::new();
+    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
     populate(
         &mut instruction_map,
         &[
-            Instruction::I(0b0010011, 1, 0b000, 0, 1),  // ADDI ( x1 := x0 + 1)
-            Instruction::B(0b1100011, 0b101, 2, 1, 0x10),   // BGE (branch if x2 >= x1)
-            Instruction::B(0b1100011, 0b101, 0, 2, 0x10),   // BGE (branch if x0 >= x2)
-        ]
+            ISA::ADDI.build(Operands {
+                rd: 1,
+                rs1: 0,
+                imm: 1,
+                ..Default::default()
+            }), // ADDI ( x1 := x0 + 1)
+            ISA::BGE.build(Operands {
+                rs1: 2,
+                rs2: 1,
+                imm: 0x10,
+                ..Default::default()
+            }), // BGE (branch if x2 >= x1)
+            ISA::BGE.build(Operands {
+                rs1: 0,
+                rs2: 2,
+                imm: 0x10,
+                ..Default::default()
+            }), // BGE (branch if x0 >= x2)
+        ],
     );
 
     // Instruction fetch
@@ -246,16 +328,31 @@ fn test_BGE() {
 fn test_BLTU() {
     let mut emulator: Emulator = Emulator::new();
 
-    let mut instruction_map: BTreeMap<XLEN, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<XLEN, u8> = BTreeMap::new();
+    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
     populate(
         &mut instruction_map,
         &[
-            Instruction::I(0b0010011, 1, 0b000, 0, 1),  // ADDI ( x1 := x0 + 1)
-            Instruction::B(0b1100011, 0b110, 0, 2, 0x10),   // BLTU (branch if x0 < x2)
-            Instruction::B(0b1100011, 0b110, 2, 1, 0x10),   // BLTU (branch if x2 < x1)
-        ]
+            ISA::ADDI.build(Operands {
+                rd: 1,
+                rs1: 0,
+                imm: 1,
+                ..Default::default()
+            }), // ADDI ( x1 := x0 + 1)
+            ISA::BLTU.build(Operands {
+                rs1: 0,
+                rs2: 2,
+                imm: 0x10,
+                ..Default::default()
+            }), // BLTU (branch if x0 < x2)
+            ISA::BLTU.build(Operands {
+                rs1: 2,
+                rs2: 1,
+                imm: 0x10,
+                ..Default::default()
+            }), // BLTU (branch if x2 < x1)
+        ],
     );
 
     // Instruction fetch
@@ -278,16 +375,31 @@ fn test_BLTU() {
 fn test_BGEU() {
     let mut emulator: Emulator = Emulator::new();
 
-    let mut instruction_map: BTreeMap<XLEN, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<XLEN, u8> = BTreeMap::new();
+    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
     populate(
         &mut instruction_map,
         &[
-            Instruction::I(0b0010011, 1, 0b000, 0, 1),  // ADDI ( x1 := x0 + 1)
-            Instruction::B(0b1100011, 0b111, 2, 1, 0x10),   // BGEU (branch if x2 >= x1)
-            Instruction::B(0b1100011, 0b111, 0, 2, 0x10),   // BGEU (branch if x0 >= x2)
-        ]
+            ISA::ADDI.build(Operands {
+                rd: 1,
+                rs1: 0,
+                imm: 1,
+                ..Default::default()
+            }), // ADDI ( x1 := x0 + 1)
+            ISA::BGEU.build(Operands {
+                rs1: 2,
+                rs2: 1,
+                imm: 0x10,
+                ..Default::default()
+            }), // BGEU (branch if x2 >= x1)
+            ISA::BGEU.build(Operands {
+                rs1: 0,
+                rs2: 2,
+                imm: 0x10,
+                ..Default::default()
+            }), // BGEU (branch if x0 >= x2)
+        ],
     );
 
     // Instruction fetch
@@ -310,8 +422,8 @@ fn test_BGEU() {
 fn test_ADDI() {
     let mut emulator: Emulator = Emulator::new();
 
-    let mut instruction_map: BTreeMap<XLEN, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<XLEN, u8> = BTreeMap::new();
+    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
     // ADDI ( x1 := x0 + 1)
     // ADDI ( x1 := x1 + (-1))
@@ -319,10 +431,25 @@ fn test_ADDI() {
     populate(
         &mut instruction_map,
         &[
-            Instruction::I(0b0010011, 1, 0b000, 0, 1),
-            Instruction::I(0b0010011, 1, 0b000, 1, -1),
-            Instruction::I(0b0010011, 0, 0b000, 0, 1)
-        ]
+            ISA::ADDI.build(Operands {
+                rd: 1,
+                rs1: 0,
+                imm: 1,
+                ..Default::default()
+            }),
+            ISA::ADDI.build(Operands {
+                rd: 1,
+                rs1: 1,
+                imm: -1,
+                ..Default::default()
+            }),
+            ISA::ADDI.build(Operands {
+                rd: 0,
+                rs1: 0,
+                imm: 1,
+                ..Default::default()
+            }),
+        ],
     );
 
     // Instruction fetch
@@ -337,23 +464,19 @@ fn test_ADDI() {
     // ADDI ( x0 := x0 + 1) <= special case should be a noop
     emulator.clock(&instruction_map, &mut data_map);
     assert_eq!(emulator.state().x[0], 0);
-
 }
-
 
 #[test]
 fn test_SLTI() {
     let mut emulator: Emulator = Emulator::new();
 
-    let mut instruction_map: BTreeMap<XLEN, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<XLEN, u8> = BTreeMap::new();
+    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
     // SLTI ( x1 := x0 + 1)
     // SLTI ( x1 := x1 + (-1))
     // SLTI ( x0 := x0 + 1 )
-
 }
-
 
 #[test]
 fn test_bits() {
@@ -363,11 +486,10 @@ fn test_bits() {
     assert_eq!(bits!(ten, 1), 0b1);
     assert_eq!(bits!(ten, 2), 0b0);
     assert_eq!(bits!(ten, 3), 0b1);
-    
+
     assert_eq!(bits!(ten, 0, 2), 0b10);
     assert_eq!(bits!(ten, 1, 3), 0b101);
     assert_eq!(bits!(ten, 3;1), 0b101);
-
 }
 
 #[test]

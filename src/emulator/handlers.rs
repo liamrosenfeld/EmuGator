@@ -1,33 +1,34 @@
-use super::{EmulatorState, InstructionHandler, bits, bitmask};
+#![allow(non_snake_case)]
 
-pub type XLEN = u32;
+use super::{EmulatorState, InstructionHandler};
+use crate::isa::{Instruction, InstructionFormat};
 
 pub fn get_handler(instr: Instruction) -> Result<InstructionHandler, ()> {
     match (instr.opcode(), instr.funct3(), instr.funct7()) {
-        (0b0110111,     _,         _) => Ok(LUI),
-        (0b0010111,     _,         _) => Ok(AUIPC),
-        (0b1101111,     _,         _) => Ok(JAL),
-        (0b1100111,     _,         _) => Ok(JALR),
-        (0b1100011, 0b000,         _) => Ok(BEQ),
-        (0b1100011, 0b001,         _) => Ok(BNE),
-        (0b1100011, 0b100,         _) => Ok(BLT),
-        (0b1100011, 0b101,         _) => Ok(BGE),
-        (0b1100011, 0b110,         _) => Ok(BLTU),
-        (0b1100011, 0b111,         _) => Ok(BGEU),
-        (0b0000011, 0b000,         _) => Ok(LB),
-        (0b0000011, 0b001,         _) => Ok(LH),
-        (0b0000011, 0b010,         _) => Ok(LW),
-        (0b0000011, 0b100,         _) => Ok(LBU),
-        (0b0000011, 0b101,         _) => Ok(LHU),
-        (0b0100011, 0b000,         _) => Ok(SB),
-        (0b0100011, 0b001,         _) => Ok(SH),
-        (0b0100011, 0b010,         _) => Ok(SW),
-        (0b0010011, 0b000,         _) => Ok(ADDI),
-        (0b0010011, 0b010,         _) => Ok(SLTI),
-        (0b0010011, 0b011,         _) => Ok(SLTIU),
-        (0b0010011, 0b100,         _) => Ok(XORI),
-        (0b0010011, 0b110,         _) => Ok(ORI),
-        (0b0010011, 0b111,         _) => Ok(ANDI),
+        (0b0110111, _, _) => Ok(LUI),
+        (0b0010111, _, _) => Ok(AUIPC),
+        (0b1101111, _, _) => Ok(JAL),
+        (0b1100111, _, _) => Ok(JALR),
+        (0b1100011, 0b000, _) => Ok(BEQ),
+        (0b1100011, 0b001, _) => Ok(BNE),
+        (0b1100011, 0b100, _) => Ok(BLT),
+        (0b1100011, 0b101, _) => Ok(BGE),
+        (0b1100011, 0b110, _) => Ok(BLTU),
+        (0b1100011, 0b111, _) => Ok(BGEU),
+        (0b0000011, 0b000, _) => Ok(LB),
+        (0b0000011, 0b001, _) => Ok(LH),
+        (0b0000011, 0b010, _) => Ok(LW),
+        (0b0000011, 0b100, _) => Ok(LBU),
+        (0b0000011, 0b101, _) => Ok(LHU),
+        (0b0100011, 0b000, _) => Ok(SB),
+        (0b0100011, 0b001, _) => Ok(SH),
+        (0b0100011, 0b010, _) => Ok(SW),
+        (0b0010011, 0b000, _) => Ok(ADDI),
+        (0b0010011, 0b010, _) => Ok(SLTI),
+        (0b0010011, 0b011, _) => Ok(SLTIU),
+        (0b0010011, 0b100, _) => Ok(XORI),
+        (0b0010011, 0b110, _) => Ok(ORI),
+        (0b0010011, 0b111, _) => Ok(ANDI),
         (0b0010011, 0b001, 0b0000000) => Ok(SLLI),
         (0b0010011, 0b101, 0b0000000) => Ok(SRLI),
         (0b0010011, 0b101, 0b0100000) => Ok(SRAI),
@@ -41,194 +42,23 @@ pub fn get_handler(instr: Instruction) -> Result<InstructionHandler, ()> {
         (0b0110011, 0b101, 0b0100000) => Ok(SRA),
         (0b0110011, 0b110, 0b0000000) => Ok(OR),
         (0b0110011, 0b111, 0b0000000) => Ok(AND),
-        (0b0001111, 0b000,         _) => match instr.instr {
+        (0b0001111, 0b000, _) => match instr.instr {
             0b1000_0011_0011_00000_000_00000_0001111 => Ok(FENCE_TSO),
             0b0000_0001_0000_00000_000_00000_0001111 => Ok(PAUSE),
-            _ => Ok(FENCE)
+            _ => Ok(FENCE),
         },
         (0b1110011, 0b000, 0b0000000) => match instr.instr {
             0b0000_0000_0000_00000_000_00000_1110011 => Ok(ECALL),
             0b0000_0000_0001_00000_000_00000_1110011 => Ok(EBREAK),
-            _ => Err(())
+            _ => Err(()),
         },
-        (0b1110011, 0b001,         _) => Ok(CSRRW),
-        (0b1110011, 0b010,         _) => Ok(CSRRS),
-        (0b1110011, 0b011,         _) => Ok(CSRRC),
-        (0b1110011, 0b101,         _) => Ok(CSRRWI),
-        (0b1110011, 0b110,         _) => Ok(CSRRSI),
-        (0b1110011, 0b111,         _) => Ok(CSRRCI),
-        _ => Err(())
-    }
-}
-
-#[derive(Clone, Copy)]
-pub enum InstructionFormat {
-    R, I, S, B, U, J, CUSTOM
-}
-
-#[derive(Clone, Copy)]
-pub struct Instruction {
-    pub(crate) instr: u32
-}
-
-impl Instruction {
-    pub fn R(opcode: u32, rd: u32, funct3: u32, rs1: u32, rs2: u32, funct7: u32) -> Instruction {
-        assert_eq!(funct7, bits!(funct7,6;0));
-        assert_eq!(rs2, bits!(rs2,4;0));
-        assert_eq!(rs1, bits!(rs1,4;0));
-        assert_eq!(funct3, bits!(funct3,2;0));
-        assert_eq!(rd, bits!(rd,4;0));
-        assert_eq!(opcode, bits!(opcode,6;0));
-        Self {
-            instr: (
-                funct7  << 25 |
-                rs2     << 20 |
-                rs1     << 15 |
-                funct3  << 12 |
-                rd      <<  7 |
-                opcode  <<  0
-            ),
-        }
-    }
-
-    pub fn I(opcode: u32, rd: u32, funct3: u32, rs1: u32, imm: i32) -> Instruction {
-        assert!( (imm == bits!(imm,11;0)) || (imm & bitmask!(31;11) == bitmask!(31;11)) );
-        let imm: u32 = imm as u32;
-        assert_eq!(rs1, bits!(rs1,4;0));
-        assert_eq!(funct3, bits!(funct3,2;0));
-        assert_eq!(rd, bits!(rd,4;0));
-        assert_eq!(opcode, bits!(opcode,6;0));
-        Self {
-            instr: (
-                imm     << 20 |
-                rs1     << 15 |
-                funct3  << 12 |
-                rd      <<  7 |
-                opcode  <<  0
-            ),
-        }
-    }
-
-    pub fn S(opcode: u32, funct3: u32, rs1: u32, rs2: u32, imm: i32) -> Instruction {
-        assert!( (imm == bits!(imm,11;0)) || (imm & bitmask!(31;11) == bitmask!(31;11)) );
-        let imm: u32 = imm as u32;
-        assert_eq!(rs1, bits!(rs1,4;0));
-        assert_eq!(funct3, bits!(funct3,2;0));
-        assert_eq!(opcode, bits!(opcode,6;0));
-        Self {
-            instr: (
-                bits!(imm,11;5) << 25 |
-                rs2     << 20 |
-                rs1     << 15 |
-                funct3  << 12 |
-                bits!(imm,4;0)  <<  7 |
-                opcode  <<  0
-            ),
-        }
-    }
-
-    pub fn B(opcode: u32, funct3: u32, rs1: u32, rs2: u32, imm: i32) -> Instruction {
-        assert!( (imm == bits!(imm,11;0)) || (imm & bitmask!(31;11) == bitmask!(31;11)) );
-        let imm: u32 = imm as u32;
-        assert_eq!(rs1, bits!(rs1,4;0));
-        assert_eq!(funct3, bits!(funct3,2;0));
-        assert_eq!(opcode, bits!(opcode,6;0));
-        Self {
-            instr: (
-                bits!(imm,12)   << 31 |
-                bits!(imm,10;5) << 25 |
-                rs2     << 20 |
-                rs1     << 15 |
-                funct3  << 12 |
-                bits!(imm,4;1)  <<  8 |
-                bits!(imm,11)   <<  7 |
-                opcode  <<  0
-            ),
-        }
-    }
-    
-    pub fn U(opcode: u32, rd: u32, imm: i32) -> Instruction {
-        assert_eq!(imm, bits!(imm,31;12) << 12);
-        let imm: u32 = imm as u32;
-        assert_eq!(opcode, bits!(opcode,6;0));
-        Self {
-            instr: (
-                bits!(imm,31;12) << 12 |
-                rd      <<  7 |
-                opcode  <<  0
-            ),
-        }
-    }
-
-    pub fn J(opcode: u32, rd: u32, imm: i32) -> Instruction {
-        assert_eq!(imm, bits!(imm,20;1) << 1);
-        let imm: u32 = imm as u32;
-        assert_eq!(opcode, bits!(opcode,6;0));
-        Self {
-            instr: (
-                bits!(imm,20)    << 31 |
-                bits!(imm,10;1)  << 21 |
-                bits!(imm,11)    << 20 |
-                bits!(imm,19;12) << 12 |
-                rd      <<  7 |
-                opcode  <<  0
-            ),
-        }
-    }
-
-    pub fn opcode(&self) -> u8 {
-        bits!(self.instr,6;0) as u8
-    }
-
-    fn immediate(&self, format: InstructionFormat) -> Result<i32, ()> {
-        match format {
-            InstructionFormat::I => Ok((
-                bits!(self.instr,31   ) * bitmask!(31; 11) |
-                bits!(self.instr,30;20) 
-            ) as i32),
-            InstructionFormat::S => Ok((
-                bits!(self.instr,31   ) * bitmask!(31; 11) |
-                bits!(self.instr,30;25) << 5  |
-                bits!(self.instr,11;7 )
-            ) as i32),
-            InstructionFormat::B => Ok((
-                bits!(self.instr,31   ) * bitmask!(31; 12) |
-                bits!(self.instr,7    ) << 11 |
-                bits!(self.instr,30;25) << 5  |
-                bits!(self.instr,11;8 ) << 1
-            ) as i32),
-            InstructionFormat::U => Ok((
-                bits!(self.instr,31;12) << 12
-            ) as i32),
-            InstructionFormat::J => Ok((
-                bits!(self.instr,31   ) * bitmask!(31; 20) |
-                bits!(self.instr,19;12) << 12 |
-                bits!(self.instr,20   ) << 11 |
-                bits!(self.instr,30;25) << 5  |
-                bits!(self.instr,24;21) << 1
-            ) as i32),
-            _ => Err(()) 
-        }
-    }
-    
-    fn rd(&self) -> u8 {
-        bits!(self.instr,7,5) as u8
-    }
-
-    fn rs1(&self) -> u8 {
-        bits!(self.instr,15,5) as u8
-    }
-
-    fn rs2(&self) -> u8 {
-        bits!(self.instr,20,5) as u8
-    }
-
-    fn funct3(&self) -> u8 {
-        bits!(self.instr, 12, 3) as u8
-    }
-
-    fn funct7(&self) -> u8 {
-        bits!(self.instr, 25, 7) as u8
+        (0b1110011, 0b001, _) => Ok(CSRRW),
+        (0b1110011, 0b010, _) => Ok(CSRRS),
+        (0b1110011, 0b011, _) => Ok(CSRRC),
+        (0b1110011, 0b101, _) => Ok(CSRRWI),
+        (0b1110011, 0b110, _) => Ok(CSRRSI),
+        (0b1110011, 0b111, _) => Ok(CSRRCI),
+        _ => Err(()),
     }
 }
 
@@ -251,10 +81,15 @@ fn AUIPC(instr: &Instruction, state: &mut EmulatorState) {
 fn JAL(instr: &Instruction, state: &mut EmulatorState) {
     // TODO: Push onto Return Address stack when rd = x1/x5
     let immed = (instr.immediate(InstructionFormat::J)).unwrap();
-    let new_pc = state.pipeline.datapath.instr_addr_o.checked_add_signed(immed).unwrap();
-    
+    let new_pc = state
+        .pipeline
+        .datapath
+        .instr_addr_o
+        .checked_add_signed(immed)
+        .unwrap();
+
     // if unaligned on 4-byte boundary
-    if(new_pc & 0x00000003 != 0x00){
+    if (new_pc & 0x00000003 != 0x00) {
         panic!("JAL instruction immediate it not on a 4-byte boundary");
     }
     // stores pc+4 into rd
@@ -268,10 +103,17 @@ fn JAL(instr: &Instruction, state: &mut EmulatorState) {
 fn JALR(instr: &Instruction, state: &mut EmulatorState) {
     // TODO: Push onto RAS
     let immed = (instr.immediate(InstructionFormat::I)).unwrap();
-    let new_pc = (state.pipeline.datapath.instr_addr_o.checked_add_signed(immed).unwrap() + state.x[instr.rs1() as usize]) & 0xFFFFFFFE;
+    let new_pc = (state
+        .pipeline
+        .datapath
+        .instr_addr_o
+        .checked_add_signed(immed)
+        .unwrap()
+        + state.x[instr.rs1() as usize])
+        & 0xFFFFFFFE;
 
     // if unaligned on 4-byte boundary
-    if(new_pc & 0x003 != 0x00){
+    if (new_pc & 0x003 != 0x00) {
         panic!("JAL target addess is not on a 4-byte boundary");
     }
 
@@ -285,14 +127,19 @@ fn JALR(instr: &Instruction, state: &mut EmulatorState) {
 
 fn BEQ(instr: &Instruction, state: &mut EmulatorState) {
     let immed = (instr.immediate(InstructionFormat::B)).unwrap();
-    let new_pc = state.pipeline.datapath.instr_addr_o.checked_add_signed(immed).unwrap();
-    
+    let new_pc = state
+        .pipeline
+        .datapath
+        .instr_addr_o
+        .checked_add_signed(immed)
+        .unwrap();
+
     // if unaligned on 4-byte boundary
-    if(new_pc & 0x003 != 0x00){
+    if (new_pc & 0x003 != 0x00) {
         panic!("JAL instruction immediate it not on a 4-byte boundary");
     }
 
-    if(state.x[instr.rs1() as usize] == state.x[instr.rs2() as usize]){
+    if (state.x[instr.rs1() as usize] == state.x[instr.rs2() as usize]) {
         // update PC
         state.pipeline.datapath.instr_addr_o = new_pc;
     }
@@ -300,14 +147,19 @@ fn BEQ(instr: &Instruction, state: &mut EmulatorState) {
 
 fn BNE(instr: &Instruction, state: &mut EmulatorState) {
     let immed = (instr.immediate(InstructionFormat::B)).unwrap();
-    let new_pc = state.pipeline.datapath.instr_addr_o.checked_add_signed(immed).unwrap();
-    
+    let new_pc = state
+        .pipeline
+        .datapath
+        .instr_addr_o
+        .checked_add_signed(immed)
+        .unwrap();
+
     // if unaligned on 4-byte boundary
-    if(new_pc & 0x003 != 0x00){
+    if (new_pc & 0x003 != 0x00) {
         panic!("JAL instruction immediate it not on a 4-byte boundary");
     }
 
-    if(state.x[instr.rs1() as usize] != state.x[instr.rs2() as usize]){
+    if (state.x[instr.rs1() as usize] != state.x[instr.rs2() as usize]) {
         // update PC
         state.pipeline.datapath.instr_addr_o = new_pc;
     }
@@ -315,14 +167,19 @@ fn BNE(instr: &Instruction, state: &mut EmulatorState) {
 
 fn BLT(instr: &Instruction, state: &mut EmulatorState) {
     let immed = (instr.immediate(InstructionFormat::B)).unwrap();
-    let new_pc = state.pipeline.datapath.instr_addr_o.checked_add_signed(immed).unwrap();
-    
+    let new_pc = state
+        .pipeline
+        .datapath
+        .instr_addr_o
+        .checked_add_signed(immed)
+        .unwrap();
+
     // if unaligned on 4-byte boundary
-    if(new_pc & 0x003 != 0x00){
+    if (new_pc & 0x003 != 0x00) {
         panic!("JAL instruction immediate it not on a 4-byte boundary");
     }
 
-    if((state.x[instr.rs1() as usize] as i32) < state.x[instr.rs2() as usize] as i32){
+    if ((state.x[instr.rs1() as usize] as i32) < state.x[instr.rs2() as usize] as i32) {
         // update PC
         state.pipeline.datapath.instr_addr_o = new_pc;
     }
@@ -330,14 +187,19 @@ fn BLT(instr: &Instruction, state: &mut EmulatorState) {
 
 fn BGE(instr: &Instruction, state: &mut EmulatorState) {
     let immed = (instr.immediate(InstructionFormat::B)).unwrap();
-    let new_pc = state.pipeline.datapath.instr_addr_o.checked_add_signed(immed).unwrap();
-    
+    let new_pc = state
+        .pipeline
+        .datapath
+        .instr_addr_o
+        .checked_add_signed(immed)
+        .unwrap();
+
     // if unaligned on 4-byte boundary
-    if(new_pc & 0x003 != 0x00){
+    if (new_pc & 0x003 != 0x00) {
         panic!("JAL instruction immediate it not on a 4-byte boundary");
     }
 
-    if((state.x[instr.rs1() as usize] as i32) >= state.x[instr.rs2() as usize] as i32){
+    if ((state.x[instr.rs1() as usize] as i32) >= state.x[instr.rs2() as usize] as i32) {
         // update PC
         state.pipeline.datapath.instr_addr_o = new_pc;
     }
@@ -345,14 +207,19 @@ fn BGE(instr: &Instruction, state: &mut EmulatorState) {
 
 fn BLTU(instr: &Instruction, state: &mut EmulatorState) {
     let immed = (instr.immediate(InstructionFormat::B)).unwrap();
-    let new_pc = state.pipeline.datapath.instr_addr_o.checked_add_signed(immed).unwrap();
-    
+    let new_pc = state
+        .pipeline
+        .datapath
+        .instr_addr_o
+        .checked_add_signed(immed)
+        .unwrap();
+
     // if unaligned on 4-byte boundary
-    if(new_pc & 0x003 != 0x00){
+    if (new_pc & 0x003 != 0x00) {
         panic!("JAL instruction immediate it not on a 4-byte boundary");
     }
 
-    if(state.x[instr.rs1() as usize] < state.x[instr.rs2() as usize]){
+    if (state.x[instr.rs1() as usize] < state.x[instr.rs2() as usize]) {
         // stores pc+4 into rd
         let rd = instr.rd() as usize;
         state.x[rd] = state.pipeline.datapath.instr_addr_o + 4;
@@ -364,14 +231,19 @@ fn BLTU(instr: &Instruction, state: &mut EmulatorState) {
 
 fn BGEU(instr: &Instruction, state: &mut EmulatorState) {
     let immed = (instr.immediate(InstructionFormat::B)).unwrap();
-    let new_pc = state.pipeline.datapath.instr_addr_o.checked_add_signed(immed).unwrap();
-    
+    let new_pc = state
+        .pipeline
+        .datapath
+        .instr_addr_o
+        .checked_add_signed(immed)
+        .unwrap();
+
     // if unaligned on 4-byte boundary
-    if(new_pc & 0x003 != 0x00){
+    if (new_pc & 0x003 != 0x00) {
         panic!("JAL instruction immediate it not on a 4-byte boundary");
     }
 
-    if(state.x[instr.rs1() as usize] >= state.x[instr.rs2() as usize]){
+    if (state.x[instr.rs1() as usize] >= state.x[instr.rs2() as usize]) {
         // stores pc+4 into rd
         let rd = instr.rd() as usize;
         state.x[rd] = state.pipeline.datapath.instr_addr_o + 4;
@@ -403,7 +275,8 @@ fn LHU(instr: &Instruction, state: &mut EmulatorState) {
 
 fn SB(instr: &Instruction, state: &mut EmulatorState) {
     let data = state.x[instr.rs2() as usize] & 0xFF;
-    let addr = state.x[instr.rs1() as usize] as i32 + instr.immediate(InstructionFormat::S).unwrap();
+    let addr =
+        state.x[instr.rs1() as usize] as i32 + instr.immediate(InstructionFormat::S).unwrap();
 
     // set data on pipline
     state.pipeline.datapath.data_addr_o = addr as u32;
@@ -414,7 +287,8 @@ fn SB(instr: &Instruction, state: &mut EmulatorState) {
 
 fn SH(instr: &Instruction, state: &mut EmulatorState) {
     let data = state.x[instr.rs2() as usize];
-    let addr = state.x[instr.rs1() as usize] as i32 + instr.immediate(InstructionFormat::S).unwrap();
+    let addr =
+        state.x[instr.rs1() as usize] as i32 + instr.immediate(InstructionFormat::S).unwrap();
 
     // set data on pipline
     state.pipeline.datapath.data_addr_o = addr as u32;
@@ -425,7 +299,8 @@ fn SH(instr: &Instruction, state: &mut EmulatorState) {
 
 fn SW(instr: &Instruction, state: &mut EmulatorState) {
     let data = state.x[instr.rs2() as usize] & 0xFFFF;
-    let addr = state.x[instr.rs1() as usize] as i32 + instr.immediate(InstructionFormat::S).unwrap();
+    let addr =
+        state.x[instr.rs1() as usize] as i32 + instr.immediate(InstructionFormat::S).unwrap();
 
     // set data on pipline
     state.pipeline.datapath.data_addr_o = addr as u32;
