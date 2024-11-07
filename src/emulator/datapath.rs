@@ -41,7 +41,39 @@ pub struct CVE2Datapath {
     pub debug_req_i: bool, // Input signal indicating a debug request.
 }
 
-#[derive(Copy, Clone)]
+impl Default for CVE2Datapath {
+    fn default() -> Self {
+        Self {
+            clk_i: Default::default(),
+            rst_ni: Default::default(),
+            instr_req_o: true,
+            instr_addr_o: 0u32,
+            instr_rdata_i: Default::default(),
+            instr_gnt_i: Default::default(),
+            instr_rvalid_i: Default::default(),
+            instr_err_i: Default::default(),
+            data_req_o: Default::default(),
+            data_addr_o: Default::default(),
+            data_wdata_o: Default::default(),
+            data_rdata_i: Default::default(),
+            data_we_o: Default::default(),
+            data_be_o: Default::default(),
+            data_gnt_i: Default::default(),
+            data_rvalid_i: Default::default(),
+            data_err_i: Default::default(),
+            fetch_enable_i: Default::default(),
+            core_sleep_o: Default::default(),
+            irq_software_i: Default::default(),
+            irq_timer_i: Default::default(),
+            irq_external_i: Default::default(),
+            irq_fast_i: Default::default(),
+            irq_nm_i: Default::default(),
+            debug_req_i: Default::default(),
+        }
+    }
+}
+
+#[derive(Copy, Clone, Default)]
 pub struct CVE2Pipeline {
     pub IF: u32, // Instruction Fetch Buffer
     pub ID: u32, // Instruction Decode Buffer
@@ -49,17 +81,4 @@ pub struct CVE2Pipeline {
 }
 
 impl CVE2Pipeline {
-    fn fillIF(&mut self) {
-        // Fill the IF buffer if the instruction was requested and granted
-        if self.datapath.instr_gnt_i && self.datapath.instr_req_o {
-            self.IF = self.datapath.instr_rdata_i;
-        }
-    }
-
-    fn fillID(&mut self) {
-        // Fill the ID buffer if the instruction is valid
-        if self.datapath.instr_rvalid_i {
-            self.IF = self.datapath.instr_rdata_i;
-        }
-    }
 }
