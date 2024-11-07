@@ -11,7 +11,7 @@ fn write(map: &mut BTreeMap<u32, u8>, address: u32, bytes: &[u8]) {
 
 fn populate(map: &mut BTreeMap<u32, u8>, instructions: &[Instruction]) {
     for (i, &instruction) in instructions.iter().enumerate() {
-        write(map, (4 * i) as u32, &instruction.instr.to_le_bytes());
+        write(map, (4 * i) as u32, &instruction.raw().to_le_bytes());
     }
 }
 

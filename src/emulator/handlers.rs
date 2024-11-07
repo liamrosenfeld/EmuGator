@@ -42,12 +42,12 @@ pub fn get_handler(instr: Instruction) -> Result<InstructionHandler, ()> {
         (0b0110011, 0b101, 0b0100000) => Ok(SRA),
         (0b0110011, 0b110, 0b0000000) => Ok(OR),
         (0b0110011, 0b111, 0b0000000) => Ok(AND),
-        (0b0001111, 0b000, _) => match instr.instr {
+        (0b0001111, 0b000, _) => match instr.raw() {
             0b1000_0011_0011_00000_000_00000_0001111 => Ok(FENCE_TSO),
             0b0000_0001_0000_00000_000_00000_0001111 => Ok(PAUSE),
             _ => Ok(FENCE),
         },
-        (0b1110011, 0b000, 0b0000000) => match instr.instr {
+        (0b1110011, 0b000, 0b0000000) => match instr.raw() {
             0b0000_0000_0000_00000_000_00000_1110011 => Ok(ECALL),
             0b0000_0000_0001_00000_000_00000_1110011 => Ok(EBREAK),
             _ => Err(()),

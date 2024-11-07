@@ -102,12 +102,10 @@ impl Emulator {
         }
 
         // Decode the instruction in the instruction decode register
-        let instr = Instruction {
-            instr: state.pipeline.ID,
-        };
+        let instr = Instruction::from_raw(state.pipeline.ID);
 
         match get_handler(instr) {
-            Err(()) => println!("Invalid Instruction {}", instr.instr),
+            Err(()) => println!("Invalid Instruction {}", instr.raw()),
             Ok(handler) => handler(&instr, &mut state),
         };
 
