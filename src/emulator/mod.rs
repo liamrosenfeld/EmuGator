@@ -1,60 +1,33 @@
 mod datapath;
-mod isa;
+mod handlers;
 
 #[cfg(test)]
 mod tests;
 
-use std::{borrow::BorrowMut, collections::BTreeMap, ops::{Index, IndexMut}, rc::Rc};
+use crate::isa::Instruction;
+use crate::{bitmask, bits};
+use std::{
+    collections::BTreeMap,
+    ops::{Index, IndexMut},
+};
 
 use datapath::CVE2Pipeline;
-use isa::{get_handler, Instruction, XLEN};
-
-macro_rules! bitmask {
-    ( $start_bit:expr,$width:expr ) => {{
-        ((1 << $width) - 1) << $start_bit
-    }};
-    ( $end_bit:expr;$start_bit:expr ) => {
-        bitmask!($start_bit, $end_bit - $start_bit + 1)
-    };
-    ( $bit:expr ) => {
-        bitmask!($bit, 1)
-    };
-}
-pub(crate) use bitmask;
-
-macro_rules! bits {
-    ( $val:expr,$start_bit:expr,$width:expr ) => {{
-        ($val >> $start_bit) & ((1 << $width) - 1)
-    }};
-    ( $val:expr,$end_bit:expr;$start_bit:expr ) => {
-        bits!($val, $start_bit, $end_bit - $start_bit + 1)
-    };
-    ( $val:expr,$bit:expr ) => {
-        bits!($val, $bit, 1)
-    };
-}
-pub(crate) use bits;
-
-
-
-use crate::emulator;
+use handlers::get_handler;
 
 pub type InstructionHandler = fn(&Instruction, &mut EmulatorState);
 
-
 #[derive(Copy, Clone, Default)]
 pub struct RegisterFile {
-    x: [XLEN; 32],
+    x: [u32; 32],
 }
 
 impl Index<usize> for RegisterFile {
-    type Output = XLEN;
+    type Output = u32;
 
     fn index(&self, index: usize) -> &Self::Output {
         if (index == 0) {
             return &0;
-        }
-        else {
+        } else {
             &self.x[index]
         }
     }
@@ -88,7 +61,7 @@ impl Emulator {
         return self.states.last().unwrap();
     }
 
-    pub fn clock(&mut self, instruction_map: &BTreeMap<XLEN, u8>, data_map: &mut BTreeMap<XLEN, u8>) {
+    pub fn clock(&mut self, instruction_map: &BTreeMap<u32, u8>, data_map: &mut BTreeMap<u32, u8>) {
         // Get a mutable copy of the last state
         let mut state = *self.state();
 
@@ -129,12 +102,10 @@ impl Emulator {
         }
 
         // Decode the instruction in the instruction decode register
-        let instr = Instruction {
-            instr: state.pipeline.ID,
-        };
+        let instr = Instruction::from_raw(state.pipeline.ID);
 
         match get_handler(instr) {
-            Err(()) => println!("Invalid Instruction {}", instr.instr),
+            Err(()) => println!("Invalid Instruction {}", instr.raw()),
             Ok(handler) => handler(&instr, &mut state),
         };
 

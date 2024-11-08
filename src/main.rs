@@ -1,8 +1,9 @@
 #[allow(non_snake_case, unused)]
-
-mod emulator;
 mod assembler;
 mod code_editor;
+mod emulator;
+mod isa;
+mod utils;
 
 use dioxus::prelude::*;
 use dioxus_logger::tracing::{info, Level};
@@ -91,11 +92,4 @@ fn TestComponent() -> Element {
 fn testing_function() {
     let test = 5;
     info!("button pressed! {}", test);
-}
-
-/// helper macro to include test files
-#[macro_export] macro_rules! include_test_file {
-    ($file_name:literal) => {
-        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/test-files/", $file_name))
-    };
 }
