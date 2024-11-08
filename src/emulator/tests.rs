@@ -91,6 +91,59 @@ fn test_JAL() {
 }
 
 #[test]
+fn test_JAL_neg_offset() {
+    let mut emulator: Emulator = Emulator::new();
+
+    let mut instruction_map: BTreeMap<XLEN, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<XLEN, u8> = BTreeMap::new();
+
+    // JAL ( x1 := PC + 4, jump to PC + 0xFFC)
+    populate(
+        &mut instruction_map,
+        &[
+            Instruction::I(0b0010011, 5, 0b000, 0, 1),  // ADDI ( x5 := x0 + 1)
+            Instruction::I(0b0010011, 5, 0b000, 0, 1),  // ADDI ( x5 := x0 + 1)
+            Instruction::J(0b1101111, 1, -4)         // JAL (pc = pc - 4)
+        ]        
+    );
+
+    // Instruction fetch
+    emulator.clock(&instruction_map, &mut data_map);
+    // ADDI ( x5 := x0 + 1)
+    emulator.clock(&instruction_map, &mut data_map);
+    // ADDI ( x5 := x0 + 1)
+    emulator.clock(&instruction_map, &mut data_map);
+
+    // After JAL, x1 should contain PC + 4, and the PC should jump to PC + 0x840
+    let pc = emulator.state().pipeline.datapath.instr_addr_o;
+    emulator.clock(&instruction_map, &mut data_map);
+    assert_eq!(emulator.state().x[1], pc + 4);
+    assert_eq!(emulator.state().pipeline.datapath.instr_addr_o, pc - 0x04);
+}
+
+#[test]
+#[should_panic(expected = "JAL instruction immediate it not on a 4-byte boundary")]
+fn test_JAL_panic() {
+    let mut emulator: Emulator = Emulator::new();
+
+    let mut instruction_map: BTreeMap<XLEN, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<XLEN, u8> = BTreeMap::new();
+
+    // JAL ( x1 := PC + 4, jump to PC + 0x123)
+    populate(
+        &mut instruction_map,
+        &[Instruction::J(0b1101111, 1, 0x123)]
+    );
+
+    // Instruction fetch
+    emulator.clock(&instruction_map, &mut data_map);
+
+    // After JAL, x1 should contain PC + 4, and the PC should jump to PC + 0x100
+    let pc = emulator.state().pipeline.datapath.instr_addr_o;
+    emulator.clock(&instruction_map, &mut data_map);
+}
+
+#[test]
 fn test_JALR() {
     let mut emulator: Emulator = Emulator::new();
 
@@ -124,7 +177,7 @@ fn test_BEQ() {
     populate(
         &mut instruction_map,
         &[
-            Instruction::I(0b0010011, 1, 0b000, 0, 1),  // ADDI ( x1 := x0 + 1)
+            Instruction::I(0b0010011, 1, 0b000, 0, 1),      // ADDI ( x1 := x0 + 1)
             Instruction::B(0b1100011, 0b000, 1, 2, 0x10),   // BEQ (branch if x1 == x2)
             Instruction::B(0b1100011, 0b000, 0, 2, 0x10)    // BEQ (branch if x0 == x2)
         ]

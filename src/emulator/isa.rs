@@ -272,7 +272,7 @@ fn JALR(instr: &Instruction, state: &mut EmulatorState) {
 
     // if unaligned on 4-byte boundary
     if(new_pc & 0x003 != 0x00){
-        panic!("JAL target addess is not on a 4-byte boundary");
+        panic!("JALR target addess is not on a 4-byte boundary");
     }
 
     // stores pc+4 into rd
@@ -289,7 +289,7 @@ fn BEQ(instr: &Instruction, state: &mut EmulatorState) {
     
     // if unaligned on 4-byte boundary
     if(new_pc & 0x003 != 0x00){
-        panic!("JAL instruction immediate it not on a 4-byte boundary");
+        panic!("BEQ instruction immediate it not on a 4-byte boundary");
     }
 
     if(state.x[instr.rs1() as usize] == state.x[instr.rs2() as usize]){
@@ -304,7 +304,7 @@ fn BNE(instr: &Instruction, state: &mut EmulatorState) {
     
     // if unaligned on 4-byte boundary
     if(new_pc & 0x003 != 0x00){
-        panic!("JAL instruction immediate it not on a 4-byte boundary");
+        panic!("BNE instruction immediate it not on a 4-byte boundary");
     }
 
     if(state.x[instr.rs1() as usize] != state.x[instr.rs2() as usize]){
@@ -319,7 +319,7 @@ fn BLT(instr: &Instruction, state: &mut EmulatorState) {
     
     // if unaligned on 4-byte boundary
     if(new_pc & 0x003 != 0x00){
-        panic!("JAL instruction immediate it not on a 4-byte boundary");
+        panic!("BLT instruction immediate it not on a 4-byte boundary");
     }
 
     if((state.x[instr.rs1() as usize] as i32) < state.x[instr.rs2() as usize] as i32){
@@ -334,7 +334,7 @@ fn BGE(instr: &Instruction, state: &mut EmulatorState) {
     
     // if unaligned on 4-byte boundary
     if(new_pc & 0x003 != 0x00){
-        panic!("JAL instruction immediate it not on a 4-byte boundary");
+        panic!("BGE instruction immediate it not on a 4-byte boundary");
     }
 
     if((state.x[instr.rs1() as usize] as i32) >= state.x[instr.rs2() as usize] as i32){
@@ -349,7 +349,7 @@ fn BLTU(instr: &Instruction, state: &mut EmulatorState) {
     
     // if unaligned on 4-byte boundary
     if(new_pc & 0x003 != 0x00){
-        panic!("JAL instruction immediate it not on a 4-byte boundary");
+        panic!("BLTU instruction immediate it not on a 4-byte boundary");
     }
 
     if(state.x[instr.rs1() as usize] < state.x[instr.rs2() as usize]){
@@ -368,7 +368,7 @@ fn BGEU(instr: &Instruction, state: &mut EmulatorState) {
     
     // if unaligned on 4-byte boundary
     if(new_pc & 0x003 != 0x00){
-        panic!("JAL instruction immediate it not on a 4-byte boundary");
+        panic!("BGEU instruction immediate it not on a 4-byte boundary");
     }
 
     if(state.x[instr.rs1() as usize] >= state.x[instr.rs2() as usize]){
