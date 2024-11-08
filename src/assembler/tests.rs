@@ -5,7 +5,7 @@ use crate::include_test_file;
 
 #[test]
 fn print_some_output() {
-    let simple_loop_program = include_test_file!("simple-loop.s");
+    let simple_loop_program = include_test_file!("syntax-check.s");
 
     match get_emulator_maps(simple_loop_program) {
         Ok((inst_mem, source_map, data_mem)) => {
@@ -13,22 +13,22 @@ fn print_some_output() {
             // source_map: BTreeMap<u32, usize> - source line mapping
             // data_mem: BTreeMap<u32, u8> - data memory
 
-            println!("Instruction Memory (Address -> Byte):");
+            // println!("Instruction Memory (Address -> Byte):");
             for (&addr, &byte) in &inst_mem {
-                println!("0x{:08X}: 0x{:02X}", addr, byte);
+                // println!("0x{:08X}: 0x{:02X}", addr, byte);
             }
 
-            println!("\nSource Map (Address -> Line Number):");
+            // println!("\nSource Map (Address -> Line Number):");
             for (&addr, &line) in &source_map {
-                println!("0x{:08X}: Line {}", addr, line);
+                // println!("0x{:08X}: Line {}", addr, line);
             }
 
-            println!("\nData Memory (Address -> Byte):");
+            // println!("\nData Memory (Address -> Byte):");
             for (&addr, &byte) in &data_mem {
-                println!("0x{:08X}: 0x{:02X}", addr, byte);
+            // println!("0x{:08X}: 0x{:02X}", addr, byte);
             }
 
-            println!("\nReconstructed 32-bit Instructions:");
+            //println!("\nReconstructed 32-bit Instructions:");
             for &addr in source_map.keys() {
                 let instruction = u32::from_le_bytes([
                     inst_mem[&addr],
@@ -36,7 +36,7 @@ fn print_some_output() {
                     inst_mem[&(addr + 2)],
                     inst_mem[&(addr + 3)],
                 ]);
-                println!("0x{:08X}: 0x{:08X}", addr, instruction);
+                // println!("0x{:08X}: 0x{:08X}", addr, instruction);
             }
         }
         Err(e) => {
@@ -51,12 +51,12 @@ fn assembler_different_locations() {
 
     match get_emulator_maps(program) {
         Ok((inst_mem, source_map, data_mem)) => {
-            // Test instruction memory
+            // actual instruction memory
             let expected_instructions: Vec<(u32, u8)> = vec![
-                (0x1000, 0x83), (0x1001, 0x20), (0x1002, 0x00), (0x1003, 0x00),
-                (0x1004, 0x03), (0x1005, 0x21), (0x1006, 0x40), (0x1007, 0x00),
-                (0x1008, 0xB3), (0x1009, 0x81), (0x100A, 0x20), (0x100B, 0x00),
-                (0x100C, 0x23), (0x100D, 0x24), (0x100E, 0x30), (0x100F, 0x00),
+                (0x0100, 0x83), (0x0101, 0x20), (0x0102, 0x80), (0x0103, 0x2E),
+                (0x0104, 0x03), (0x0105, 0x21), (0x0106, 0x80), (0x0107, 0x2E),
+                (0x0108, 0xB3), (0x0109, 0x81), (0x010A, 0x20), (0x010B, 0x00),
+                (0x010C, 0x23), (0x010D, 0x22), (0x010E, 0x30), (0x010F, 0x2E),
             ];
             
             for (addr, expected_byte) in expected_instructions {
@@ -68,12 +68,12 @@ fn assembler_different_locations() {
                 );
             }
 
-            // Test source map
+            // source map stuff
             let expected_source_lines: Vec<(u32, usize)> = vec![
-                (0x1000, 3),
-                (0x1004, 4),
-                (0x1008, 5),
-                (0x100C, 6),
+                (0x0100, 3),
+                (0x0104, 4),
+                (0x0108, 5),
+                (0x010C, 6),
             ];
 
             for (addr, expected_line) in expected_source_lines {
@@ -85,11 +85,11 @@ fn assembler_different_locations() {
                 );
             }
 
-            // Test data memory
+            // data memory starting from 1000 = hex 0x03E8
             let expected_data: Vec<(u32, u8)> = vec![
-                (0x2000, 0x2A), (0x2001, 0x00), (0x2002, 0x00), (0x2003, 0x00),  // 42
-                (0x2004, 0x3A), (0x2005, 0x00), (0x2006, 0x00), (0x2007, 0x00),  // 58
-                (0x2008, 0x00), (0x2009, 0x00), (0x200A, 0x00), (0x200B, 0x00),  // 0
+                (0x03E8, 0x2A), (0x03E9, 0x00), (0x03EA, 0x00), (0x03EB, 0x00),  // 42
+                (0x03EC, 0x3A), (0x03ED, 0x00), (0x03EE, 0x00), (0x03EF, 0x00),  // 58
+                (0x03F0, 0x00), (0x03F1, 0x00), (0x03F2, 0x00), (0x03F3, 0x00),  // 0
             ];
 
             for (addr, expected_byte) in expected_data {
@@ -103,10 +103,10 @@ fn assembler_different_locations() {
 
             // Test reconstructed 32-bit instructions
             let expected_32bit_instructions: Vec<(u32, u32)> = vec![
-                (0x1000, 0x00002083),  // lw x1, value1
-                (0x1004, 0x00402103),  // lw x2, value2
-                (0x1008, 0x002081B3),  // add x3, x1, x2
-                (0x100C, 0x00302423),  // sw x3, result
+                (0x0100, 0x2E802083),  // lw x1, value1
+                (0x0104, 0x2E802103),  // lw x2, value2
+                (0x0108, 0x002081B3),  // add x3, x1, x2
+                (0x010C, 0x2E302223),  // sw x3, result
             ];
 
             for (addr, expected_instruction) in expected_32bit_instructions {
@@ -259,7 +259,7 @@ fn assembler_all_instructions() {
 
     match get_emulator_maps(simple_loop_program) {
         Ok((inst_mem, source_map, data_mem)) => {
-            // Verify instruction memory map
+            // actual instruction memory
             let expected_inst_mem: BTreeMap<u32, u8> = [
                 (0x00000000, 0x93), (0x00000001, 0x02), (0x00000002, 0x53), (0x00000003, 0x00),
                 (0x00000004, 0x93), (0x00000005, 0x22), (0x00000006, 0x53), (0x00000007, 0x00),
@@ -327,7 +327,7 @@ fn assembler_all_instructions() {
                 (0x000000B0, 80), (0x000000B4, 83), (0x000000B8, 86), (0x000000BC, 89),
             ].iter().cloned().collect();
 
-            // Verify data memory
+            // verifying data memory
             let expected_data_mem: BTreeMap<u32, u8> = [
                 (0x00000000, 0x74), (0x00000001, 0x65), (0x00000002, 0x73), (0x00000003, 0x74),
                 (0x00000004, 0x0A), (0x00000005, 0x00), (0x00000006, 0x01), (0x00000007, 0x00),
@@ -339,12 +339,12 @@ fn assembler_all_instructions() {
                 (0x0000001C, 0x74),
             ].iter().cloned().collect();
 
-            // Compare actual outputs with expected values
+            // comparing outputs
             assert_eq!(inst_mem, expected_inst_mem, "Instruction memory mismatch");
             assert_eq!(source_map, expected_source_map, "Source map mismatch");
             assert_eq!(data_mem, expected_data_mem, "Data memory mismatch");
 
-            // Optional: Print differences if test fails
+            // printing differences
             if inst_mem != expected_inst_mem {
                 println!("Instruction Memory Differences:");
                 for (addr, &byte) in &expected_inst_mem {

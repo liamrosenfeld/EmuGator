@@ -264,31 +264,31 @@ impl Assembler {
             .split(|c| c == ' ' || c == ',')
             .filter(|s| !s.is_empty())
             .collect();
-
+    
         if parts.is_empty() {
             return Err("Empty instruction".to_string());
         }
-
+    
         let name = parts[0].to_uppercase();
         let def = ISA::from_str(&name).map_err(|_| format!("Unknown instruction: {}", name))?.definition();
-
-        // For load/store instructions with labels, convert label to base+offset format
+    
         if def.format == InstructionFormat::I && def.opcode == 0b0000011
             || def.format == InstructionFormat::S && def.opcode == 0b0100011
         {
             if parts.len() == 3 && data_labels.contains_key(parts[2]) {
                 let base_addr = data_labels[parts[2]];
-                let modified_addr = format!("{}(x0)", base_addr);
+                let offset = (base_addr as i64) - (current_address as i64);
+                let modified_addr = format!("{}(x0)", offset);
                 let mut modified_parts = parts.to_vec();
                 modified_parts[2] = &modified_addr;
                 return match def.format {
-                    InstructionFormat::I => self.parse_i_type(&modified_parts, def.clone()), // Use same instruction def
+                    InstructionFormat::I => self.parse_i_type(&modified_parts, def.clone()),
                     InstructionFormat::S => self.parse_s_type(&modified_parts, def.clone()),
                     _ => unreachable!(),
                 };
             }
         }
-
+    
         match def.format {
             InstructionFormat::R => self.parse_r_type(&parts, def),
             InstructionFormat::I => self.parse_i_type(&parts, def),
@@ -320,10 +320,10 @@ impl Assembler {
                 if parts.len() != 1 {
                     return Err("ECALL/EBREAK instructions take no operands".to_string());
                 }
-
+    
                 let operands = Operands {
-                    rd: 0,   // x0
-                    rs1: 0,  // x0
+                    rd: 0,
+                    rs1: 0,
                     imm: match parts[0] {
                         "ECALL" => 0,
                         "EBREAK" => 1,
@@ -334,36 +334,37 @@ impl Assembler {
                 Ok(Instruction::from_def_operands(def, operands))
             }
             0b0001111 => {
-                // Special handling for FENCE
                 if parts.len() != 1 {
                     return Err("FENCE instruction takes no operands".to_string());
                 }
-
+    
                 let operands = Operands {
-                    rd: 0,   // x0
-                    rs1: 0,  // x0
+                    rd: 0,
+                    rs1: 0,
                     imm: 0,
                     ..Default::default()
                 };
                 Ok(Instruction::from_def_operands(def, operands))
             }
             _ => {
-                // Regular I-type instructions
                 if parts.len() != 4 {
                     return Err("I-type instructions need 2 registers and an immediate".to_string());
                 }
-
-                // Special handling for shift instructions (SLLI, SRLI, SRAI)
+    
                 let mut imm = self.parse_immediate(parts[3])?;
+                if imm > 2047 || imm < -2048 {
+                    return Err("Immediate value out of range (-2048 to 2047)".to_string());
+                }
+    
                 if let Some(funct7) = def.funct7 {
-                    // For shift instructions, immediate is split into funct7 and shamt
+                    // Shift instructions (immediate split into funct7 and shamt)
                     if def.opcode == 0b0010011 && (def.funct3 == Some(0x1) || def.funct3 == Some(0x5)) {
                         // SLLI, SRLI, SRAI
                         let shamt = imm & 0x1F; // Bottom 5 bits only
                         imm = ((funct7 as i32) << 5) | shamt; // Combine funct7 and shamt
                     }
                 }
-
+    
                 let operands = Operands {
                     rd: self.parse_register(parts[1])?,
                     rs1: self.parse_register(parts[2])?,
@@ -447,10 +448,19 @@ impl Assembler {
         if parts.len() != 3 {
             return Err("U-type instructions need a register and an immediate".to_string());
         }
-
+    
+        let imm = self.parse_immediate(parts[2])?;
+        
+        // For LUI/AUIPC, we want to allow full 20-bit immediate values
+        let imm_value = if imm < 0 {
+            (((-imm) as u32) & 0xFFFFF) | 0xFFF00000
+        } else {
+            (imm as u32) & 0xFFFFF
+        };
+    
         let operands = Operands {
             rd: self.parse_register(parts[1])?,
-            imm: self.parse_immediate(parts[2])? << 12,
+            imm: (imm_value as i32) >> 12,
             ..Default::default()
         };
         Ok(Instruction::from_def_operands(def, operands))
@@ -499,14 +509,18 @@ impl Assembler {
             .split(|c| c == '(' || c == ')')
             .filter(|s| !s.is_empty())
             .collect();
-
+    
         if parts.len() != 2 {
             return Err("Memory address must be in format: offset(register)".to_string());
         }
-
+    
         let offset = self.parse_immediate(parts[0])?;
+        if offset > 2047 || offset < -2048 {
+            return Err("Memory offset out of range (-2048 to 2047)".to_string());
+        }
+    
         let reg = self.parse_register(parts[1])?;
-
+    
         Ok((offset, reg))
     }
 
@@ -522,14 +536,25 @@ impl Assembler {
         }
     }
 
-    fn parse_immediate(&self, imm: &str) -> Result<i32, String> {
-        let imm = imm.trim();
-        if imm.starts_with("0x") {
-            i32::from_str_radix(&imm[2..], 16)
+    fn parse_immediate(&self, value: &str) -> Result<i32, String> {
+        let value = value.trim();
+        let (is_negative, value) = if value.starts_with('-') {
+            (true, &value[1..])
         } else {
-            imm.parse::<i32>()
+            (false, value)
+        };
+    
+        let abs_value = if value.starts_with("0x") {
+            i32::from_str_radix(&value[2..], 16)
+        } else {
+            value.parse::<i32>()
+        }.map_err(|_| format!("Invalid immediate value: {}", value))?;
+    
+        if is_negative {
+            Ok(-abs_value)
+        } else {
+            Ok(abs_value)
         }
-        .map_err(|_| format!("Invalid immediate value: {}", imm))
     }
 }
 
