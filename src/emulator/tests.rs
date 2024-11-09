@@ -108,16 +108,16 @@ fn test_JAL() {
 fn test_JAL_neg_offset() {
     let mut emulator: Emulator = Emulator::new();
 
-    let mut instruction_map: BTreeMap<XLEN, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<XLEN, u8> = BTreeMap::new();
+    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
-    // JAL ( x1 := PC + 4, jump to PC + 0xFFC)
+    // JAL ( x1 := PC + 4, jump to PC - 4)
     populate(
         &mut instruction_map,
         &[
-            Instruction::I(0b0010011, 5, 0b000, 0, 1),  // ADDI ( x5 := x0 + 1)
-            Instruction::I(0b0010011, 5, 0b000, 0, 1),  // ADDI ( x5 := x0 + 1)
-            Instruction::J(0b1101111, 1, -4)         // JAL (pc = pc - 4)
+            ISA::ADDI.build(Operands {rd: 5, rs1: 0, imm: 0, ..Default::default()}), // ADDI ( x5 := x0 + 1)
+            ISA::ADDI.build(Operands {rd: 5, rs1: 0, imm: 0, ..Default::default()}), // ADDI ( x5 := x0 + 1)
+            ISA::JAL.build(Operands {rd: 1, imm: -4, ..Default::default()}) // JAL (pc = pc - 4)
         ]        
     );
 
@@ -140,13 +140,15 @@ fn test_JAL_neg_offset() {
 fn test_JAL_panic() {
     let mut emulator: Emulator = Emulator::new();
 
-    let mut instruction_map: BTreeMap<XLEN, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<XLEN, u8> = BTreeMap::new();
+    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
-    // JAL ( x1 := PC + 4, jump to PC + 0x123)
+    // JAL ( x1 := PC + 4, jump to PC + 0x122)
     populate(
         &mut instruction_map,
-        &[Instruction::J(0b1101111, 1, 0x123)]
+        &[
+            ISA::JAL.build(Operands {rd: 1, imm: 0x122, ..Default::default()})
+        ]
     );
 
     // Instruction fetch
@@ -186,6 +188,39 @@ fn test_JALR() {
     assert_eq!(
         emulator.state().pipeline.datapath.instr_addr_o,
         (pc + emulator.state().x[2] + 0x4) & !1
+    );
+}
+
+#[test]
+fn test_JALR_neg_offset() {
+    let mut emulator: Emulator = Emulator::new();
+
+    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
+
+    populate(
+        &mut instruction_map,
+        &[
+            ISA::ADDI.build(Operands {rd: 2, rs1: 0, imm: 1, ..Default::default()}), // ADDI ( x5 := x0 + 1)
+            ISA::ADDI.build(Operands {rd: 2, rs1: 0, imm: 1, ..Default::default()}), // ADDI ( x5 := x0 + 1)
+            ISA::JALR.build(Operands {rd: 1, rs1: 2, imm: -4, ..Default::default()})  // JALR ( x1 := PC + 4, jump to (x2 - 4) & ~1)
+        ]        
+    );
+
+    // Instruction fetch
+    emulator.clock(&instruction_map, &mut data_map);
+    // ADDI ( x5 := x0 + 1)
+    emulator.clock(&instruction_map, &mut data_map);
+    // ADDI ( x5 := x0 + 1)
+    emulator.clock(&instruction_map, &mut data_map);
+
+    // After JALR, x1 should contain PC + 4, and the PC should jump to PC - 4 + 2
+    let pc = emulator.state().pipeline.datapath.instr_addr_o;
+    emulator.clock(&instruction_map, &mut data_map);
+    assert_eq!(emulator.state().x[1], pc  + 4);
+    assert_eq!(
+        emulator.state().pipeline.datapath.instr_addr_o,
+        (pc + emulator.state().x[2] - 4) & !1
     );
 }
 
