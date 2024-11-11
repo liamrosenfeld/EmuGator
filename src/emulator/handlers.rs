@@ -89,7 +89,7 @@ fn JAL(instr: &Instruction, state: &mut EmulatorState) {
         .unwrap();
 
     // if unaligned on 4-byte boundary
-    if (new_pc & 0x00000003 != 0x00) {
+    if new_pc & 0x00000003 != 0x00 {
         panic!("JAL instruction immediate it not on a 4-byte boundary");
     }
     // stores pc+4 into rd
@@ -113,7 +113,7 @@ fn JALR(instr: &Instruction, state: &mut EmulatorState) {
         & 0xFFFFFFFE;
 
     // if unaligned on 4-byte boundary
-    if(new_pc & 0x003 != 0x00){
+    if new_pc & 0x003 != 0x00 {
         panic!("JALR target addess is not on a 4-byte boundary");
     }
 
@@ -135,11 +135,11 @@ fn BEQ(instr: &Instruction, state: &mut EmulatorState) {
         .unwrap();
 
     // if unaligned on 4-byte boundary
-    if(new_pc & 0x003 != 0x00){
+    if new_pc & 0x003 != 0x00{
         panic!("BEQ instruction immediate it not on a 4-byte boundary");
     }
 
-    if (state.x[instr.rs1() as usize] == state.x[instr.rs2() as usize]) {
+    if state.x[instr.rs1() as usize] == state.x[instr.rs2() as usize] {
         // update PC
         state.pipeline.datapath.instr_addr_o = new_pc;
     }
@@ -155,11 +155,11 @@ fn BNE(instr: &Instruction, state: &mut EmulatorState) {
         .unwrap();
 
     // if unaligned on 4-byte boundary
-    if(new_pc & 0x003 != 0x00){
+    if new_pc & 0x003 != 0x00 {
         panic!("BNE instruction immediate it not on a 4-byte boundary");
     }
 
-    if (state.x[instr.rs1() as usize] != state.x[instr.rs2() as usize]) {
+    if state.x[instr.rs1() as usize] != state.x[instr.rs2() as usize] {
         // update PC
         state.pipeline.datapath.instr_addr_o = new_pc;
     }
@@ -175,11 +175,11 @@ fn BLT(instr: &Instruction, state: &mut EmulatorState) {
         .unwrap();
 
     // if unaligned on 4-byte boundary
-    if(new_pc & 0x003 != 0x00){
+    if new_pc & 0x003 != 0x00 {
         panic!("BLT instruction immediate it not on a 4-byte boundary");
     }
 
-    if ((state.x[instr.rs1() as usize] as i32) < state.x[instr.rs2() as usize] as i32) {
+    if (state.x[instr.rs1() as usize] as i32) < state.x[instr.rs2() as usize] as i32 {
         // update PC
         state.pipeline.datapath.instr_addr_o = new_pc;
     }
@@ -195,11 +195,11 @@ fn BGE(instr: &Instruction, state: &mut EmulatorState) {
         .unwrap();
 
     // if unaligned on 4-byte boundary
-    if(new_pc & 0x003 != 0x00){
+    if new_pc & 0x003 != 0x00 {
         panic!("BGE instruction immediate it not on a 4-byte boundary");
     }
 
-    if ((state.x[instr.rs1() as usize] as i32) >= state.x[instr.rs2() as usize] as i32) {
+    if (state.x[instr.rs1() as usize] as i32) >= state.x[instr.rs2() as usize] as i32 {
         // update PC
         state.pipeline.datapath.instr_addr_o = new_pc;
     }
@@ -215,11 +215,11 @@ fn BLTU(instr: &Instruction, state: &mut EmulatorState) {
         .unwrap();
 
     // if unaligned on 4-byte boundary
-    if(new_pc & 0x003 != 0x00){
+    if new_pc & 0x003 != 0x00 {
         panic!("BLTU instruction immediate it not on a 4-byte boundary");
     }
 
-    if (state.x[instr.rs1() as usize] < state.x[instr.rs2() as usize]) {
+    if state.x[instr.rs1() as usize] < state.x[instr.rs2() as usize] {
         // stores pc+4 into rd
         let rd = instr.rd() as usize;
         state.x[rd] = state.pipeline.datapath.instr_addr_o + 4;
@@ -239,11 +239,11 @@ fn BGEU(instr: &Instruction, state: &mut EmulatorState) {
         .unwrap();
 
     // if unaligned on 4-byte boundary
-    if(new_pc & 0x003 != 0x00){
+    if new_pc & 0x003 != 0x00 {
         panic!("BGEU instruction immediate it not on a 4-byte boundary");
     }
 
-    if (state.x[instr.rs1() as usize] >= state.x[instr.rs2() as usize]) {
+    if state.x[instr.rs1() as usize] >= state.x[instr.rs2() as usize] {
         // stores pc+4 into rd
         let rd = instr.rd() as usize;
         state.x[rd] = state.pipeline.datapath.instr_addr_o + 4;

@@ -17,7 +17,7 @@ fn populate(map: &mut BTreeMap<u32, u8>, instructions: &[Instruction]) {
 
 #[test]
 fn test_LUI() {
-    let mut emulator: Emulator = Emulator::new();
+    let mut emulator_state = EmulatorState::default();
 
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
@@ -40,18 +40,18 @@ fn test_LUI() {
     );
 
     // Instruction fetch
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
 
     // After LUI, x1 should be loaded with the upper 20 bits of the immediate
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[1], 0x12345000);
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[0], 0x0);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[1], 0x12345000);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[0], 0x0);
 }
 
 #[test]
 fn test_AUIPC() {
-    let mut emulator: Emulator = Emulator::new();
+    let mut emulator_state = EmulatorState::default();
 
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
@@ -67,19 +67,19 @@ fn test_AUIPC() {
     );
 
     // Instruction fetch
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
 
     // After AUIPC, x1 should hold the value (PC + 0x12345000)
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
     assert_eq!(
-        emulator.state().x[1],
-        emulator.state().pipeline.datapath.instr_addr_o + 0x12345000
+        emulator_state.x[1],
+        emulator_state.pipeline.datapath.instr_addr_o + 0x12345000
     );
 }
 
 #[test]
 fn test_JAL() {
-    let mut emulator: Emulator = Emulator::new();
+    let mut emulator_state = EmulatorState::default();
 
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
@@ -95,18 +95,18 @@ fn test_JAL() {
     );
 
     // Instruction fetch
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
 
     // After JAL, x1 should contain PC + 4, and the PC should jump to PC + 0x100
-    let pc = emulator.state().pipeline.datapath.instr_addr_o;
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[1], pc + 4);
-    assert_eq!(emulator.state().pipeline.datapath.instr_addr_o, pc + 0x100);
+    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[1], pc + 4);
+    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x100);
 }
 
 #[test]
 fn test_JAL_neg_offset() {
-    let mut emulator: Emulator = Emulator::new();
+    let mut emulator_state = EmulatorState::default();
 
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
@@ -136,23 +136,23 @@ fn test_JAL_neg_offset() {
     );
 
     // Instruction fetch
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
     // ADDI ( x5 := x0 + 1)
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
     // ADDI ( x5 := x0 + 1)
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
 
     // After JAL, x1 should contain PC + 4, and the PC should jump to PC + 0x840
-    let pc = emulator.state().pipeline.datapath.instr_addr_o;
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[1], pc + 4);
-    assert_eq!(emulator.state().pipeline.datapath.instr_addr_o, pc - 0x04);
+    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[1], pc + 4);
+    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc - 0x04);
 }
 
 #[test]
 #[should_panic(expected = "JAL instruction immediate it not on a 4-byte boundary")]
 fn test_JAL_panic() {
-    let mut emulator: Emulator = Emulator::new();
+    let mut emulator_state = EmulatorState::default();
 
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
@@ -168,16 +168,16 @@ fn test_JAL_panic() {
     );
 
     // Instruction fetch
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
 
     // After JAL, x1 should contain PC + 4, and the PC should jump to PC + 0x100
-    let pc = emulator.state().pipeline.datapath.instr_addr_o;
-    emulator.clock(&instruction_map, &mut data_map);
+    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
 }
 
 #[test]
 fn test_JALR() {
-    let mut emulator: Emulator = Emulator::new();
+    let mut emulator_state = EmulatorState::default();
 
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
@@ -195,21 +195,21 @@ fn test_JALR() {
     );
 
     // Instruction fetch
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
 
     // After JALR, x1 should contain PC + 4, and the PC should jump to (x2 + 0x4) & ~1
-    let pc = emulator.state().pipeline.datapath.instr_addr_o;
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[1], pc + 4);
+    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[1], pc + 4);
     assert_eq!(
-        emulator.state().pipeline.datapath.instr_addr_o,
-        (pc + emulator.state().x[2] + 0x4) & !1
+        emulator_state.pipeline.datapath.instr_addr_o,
+        (pc + emulator_state.x[2] + 0x4) & !1
     );
 }
 
 #[test]
 fn test_JALR_neg_offset() {
-    let mut emulator: Emulator = Emulator::new();
+    let mut emulator_state = EmulatorState::default();
 
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
@@ -239,25 +239,25 @@ fn test_JALR_neg_offset() {
     );
 
     // Instruction fetch
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
     // ADDI ( x5 := x0 + 1)
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
     // ADDI ( x5 := x0 + 1)
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
 
     // After JALR, x1 should contain PC + 4, and the PC should jump to PC - 4 + 2
-    let pc = emulator.state().pipeline.datapath.instr_addr_o;
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[1], pc + 4);
+    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[1], pc + 4);
     assert_eq!(
-        emulator.state().pipeline.datapath.instr_addr_o,
-        (pc + emulator.state().x[2] - 4) & !1
+        emulator_state.pipeline.datapath.instr_addr_o,
+        (pc + emulator_state.x[2] - 4) & !1
     );
 }
 
 #[test]
 fn test_BEQ() {
-    let mut emulator: Emulator = Emulator::new();
+    let mut emulator_state = EmulatorState::default();
 
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
@@ -287,24 +287,24 @@ fn test_BEQ() {
     );
 
     // Instruction fetch
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
     // ADDI ( x1 := x0 + 1)
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
 
     // Check whether the branch occurs (branch to PC + 0x4 if x1 == x2)
-    let pc = emulator.state().pipeline.datapath.instr_addr_o;
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().pipeline.datapath.instr_addr_o, pc + 0x4);
+    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x4);
 
     // Check whether the branch occurs (branch to PC + 0x10 if x0 == x2)
-    let pc = emulator.state().pipeline.datapath.instr_addr_o;
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().pipeline.datapath.instr_addr_o, pc + 0x10);
+    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x10);
 }
 
 #[test]
 fn test_BNE() {
-    let mut emulator: Emulator = Emulator::new();
+    let mut emulator_state = EmulatorState::default();
 
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
@@ -334,24 +334,24 @@ fn test_BNE() {
     );
 
     // Instruction fetch
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
     // ADDI ( x1 := x0 + 1)
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
 
     // Check that branch did not occur because x0 == x2
-    let pc = emulator.state().pipeline.datapath.instr_addr_o;
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().pipeline.datapath.instr_addr_o, pc + 0x4);
+    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x4);
 
     // Check whether the branch occurs (branch to PC + 0x10 because x1 != x2)
-    let pc = emulator.state().pipeline.datapath.instr_addr_o;
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().pipeline.datapath.instr_addr_o, pc + 0x10);
+    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x10);
 }
 
 #[test]
 fn test_BLT() {
-    let mut emulator: Emulator = Emulator::new();
+    let mut emulator_state = EmulatorState::default();
 
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
@@ -381,24 +381,24 @@ fn test_BLT() {
     );
 
     // Instruction fetch
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
     // ADDI ( x1 := x0 + 1)
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
 
     // Check that branch did not occur because x0 >= x2
-    let pc = emulator.state().pipeline.datapath.instr_addr_o;
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().pipeline.datapath.instr_addr_o, pc + 0x4);
+    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x4);
 
     // Check whether the branch occurs (branch to PC + 0x10 because x2 < x1)
-    let pc = emulator.state().pipeline.datapath.instr_addr_o;
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().pipeline.datapath.instr_addr_o, pc + 0x10);
+    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x10);
 }
 
 #[test]
 fn test_BGE() {
-    let mut emulator: Emulator = Emulator::new();
+    let mut emulator_state = EmulatorState::default();
 
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
@@ -428,24 +428,24 @@ fn test_BGE() {
     );
 
     // Instruction fetch
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
     // ADDI ( x1 := x0 + 1)
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
 
     // Check that branch did not occur because x2 < x1
-    let pc = emulator.state().pipeline.datapath.instr_addr_o;
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().pipeline.datapath.instr_addr_o, pc + 0x4);
+    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x4);
 
     // Check whether the branch occurs (branch to PC + 0x10 because x0 >= x2)
-    let pc = emulator.state().pipeline.datapath.instr_addr_o;
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().pipeline.datapath.instr_addr_o, pc + 0x10);
+    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x10);
 }
 
 #[test]
 fn test_BLTU() {
-    let mut emulator: Emulator = Emulator::new();
+    let mut emulator_state = EmulatorState::default();
 
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
@@ -475,24 +475,24 @@ fn test_BLTU() {
     );
 
     // Instruction fetch
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
     // ADDI ( x1 := x0 + 1)
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
 
     // Check that branch did not occur because x0 >= x2
-    let pc = emulator.state().pipeline.datapath.instr_addr_o;
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().pipeline.datapath.instr_addr_o, pc + 0x4);
+    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x4);
 
     // Check whether the branch occurs (branch to PC + 0x10 because x2 < x1)
-    let pc = emulator.state().pipeline.datapath.instr_addr_o;
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().pipeline.datapath.instr_addr_o, pc + 0x10);
+    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x10);
 }
 
 #[test]
 fn test_BGEU() {
-    let mut emulator: Emulator = Emulator::new();
+    let mut emulator_state = EmulatorState::default();
 
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
@@ -522,24 +522,24 @@ fn test_BGEU() {
     );
 
     // Instruction fetch
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
     // ADDI ( x1 := x0 + 1)
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
 
     // Check that branch did not occur because x2 < x1
-    let pc = emulator.state().pipeline.datapath.instr_addr_o;
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().pipeline.datapath.instr_addr_o, pc + 0x4);
+    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x4);
 
     // Check whether the branch occurs (branch to PC + 0x10 because x0 >= x2)
-    let pc = emulator.state().pipeline.datapath.instr_addr_o;
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().pipeline.datapath.instr_addr_o, pc + 0x10);
+    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x10);
 }
 
 #[test]
 fn test_ADDI() {
-    let mut emulator: Emulator = Emulator::new();
+    let mut emulator_state = EmulatorState::default();
 
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
@@ -572,22 +572,22 @@ fn test_ADDI() {
     );
 
     // Instruction fetch
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
 
     // ADDI ( x1 := x0 + 1)
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[1], 1);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[1], 1);
     // ADDI ( x1 := x1 + 1)
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[1], 0);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[1], 0);
     // ADDI ( x0 := x0 + 1) <= special case should be a noop
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[0], 0);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[0], 0);
 }
 
 #[test]
 fn test_SLTI() {
-    let mut emulator: Emulator = Emulator::new();
+    let mut emulator_state = EmulatorState::default();
 
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
@@ -621,22 +621,22 @@ fn test_SLTI() {
     );
 
     // Instruction fetch
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
 
     // SLTI ( x1 := x0 < 1)
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[1], 1);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[1], 1);
     // SLTI ( x1 := x1 < (-1))
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[1], 0);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[1], 0);
     // SLTI ( x0 := x0 < 1 ) <= Should not change x0
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[0], 0);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[0], 0);
 }
 
 #[test]
 fn test_SLTIU() {
-    let mut emulator: Emulator = Emulator::new();
+    let mut emulator_state = EmulatorState::default();
 
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
@@ -670,22 +670,22 @@ fn test_SLTIU() {
     );
 
     // Instruction fetch
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
 
     // SLTI ( x1 := x0 < 1)
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[1], 1);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[1], 1);
     // SLTI ( x1 := x1 < (-1))
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[1], 1);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[1], 1);
     // SLTI ( x0 := x0 < 1 ) <= Should not change x0
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[0], 0);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[0], 0);
 }
 
 #[test]
 fn test_XORI() {
-    let mut emulator: Emulator = Emulator::new();
+    let mut emulator_state = EmulatorState::default();
 
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
@@ -719,22 +719,22 @@ fn test_XORI() {
     );
 
     // Instruction fetch
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
 
     // XORI ( x1 := x0 ^ 4)
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[1], 4);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[1], 4);
     // XORI ( x1 := x1 ^ (-1))
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[1] as i32, -5);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[1] as i32, -5);
     // XORI ( x0 := x0 ^ 100 ) <= Should not change x0
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[0], 0);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[0], 0);
 }
 
 #[test]
 fn test_ORI() {
-    let mut emulator: Emulator = Emulator::new();
+    let mut emulator_state = EmulatorState::default();
 
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
@@ -768,22 +768,22 @@ fn test_ORI() {
     );
 
     // Instruction fetch
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
 
     // ORI ( x1 := x0 | 12)
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[1], 12);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[1], 12);
     // ORI ( x1 := x1 ^ (-10))
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[1] as i32, -2);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[1] as i32, -2);
     // ORI ( x0 := x0 ^ 100 ) <= Should not change x0
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[0], 0);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[0], 0);
 }
 
 #[test]
 fn test_ANDI() {
-    let mut emulator: Emulator = Emulator::new();
+    let mut emulator_state = EmulatorState::default();
 
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
@@ -819,28 +819,28 @@ fn test_ANDI() {
     );
 
     // Instruction fetch
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
 
     // Set x1 := 37
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[1], 37);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[1], 37);
 
     // ANDI ( x1 := x1 & 5)
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[1], 5);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[1], 5);
 
     // ANDI ( x1 := x1 & (-10))
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[1], 4);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[1], 4);
 
     // ANDI ( x0 := x0 & 100 ) <= Should not change x0
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[0], 0);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[0], 0);
 }
 
 #[test]
 fn test_SLLI() {
-    let mut emulator: Emulator = Emulator::new();
+    let mut emulator_state = EmulatorState::default();
 
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
@@ -876,21 +876,21 @@ fn test_SLLI() {
     );
 
     // Instruction fetch
-    emulator.clock(&instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
 
     // Set x1 := 10
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[1], 10);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[1], 10);
 
     // SLLI ( x2 := x1 << 4)
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[2], 160);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[2], 160);
 
     // SLLI ( x3 := x1 << 0b1000001) Should only shift 1 time since we only look at last 5 bits
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[3], 20);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[3], 20);
 
     // SLLI ( x0 := x1 << 3 ) <= Should not change x0
-    emulator.clock(&instruction_map, &mut data_map);
-    assert_eq!(emulator.state().x[0], 0);
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[0], 0);
 }
