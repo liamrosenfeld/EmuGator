@@ -11,7 +11,7 @@ use std::{
     ops::{Index, IndexMut},
 };
 
-use datapath::CVE2Pipeline;
+use datapath::CVE2Datapath;
 use handlers::get_handler;
 
 pub type InstructionHandler = fn(&Instruction, &mut EmulatorState);
@@ -43,7 +43,7 @@ impl IndexMut<usize> for RegisterFile {
 #[derive(Copy, Clone, Default)]
 pub struct EmulatorState {
     pub x: RegisterFile,
-    pub pipeline: CVE2Pipeline,
+    pub pipeline: CVE2Datapath,
 }
 
 pub struct Emulator {
