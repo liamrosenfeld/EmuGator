@@ -4,6 +4,7 @@ mod handlers;
 #[cfg(test)]
 mod tests;
 
+use crate::assembler::AssembledProgram;
 use crate::isa::Instruction;
 use crate::{bitmask, bits};
 use std::{
@@ -16,7 +17,7 @@ use handlers::get_handler;
 
 pub type InstructionHandler = fn(&Instruction, &mut EmulatorState);
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, Debug)]
 pub struct RegisterFile {
     x: [u32; 32],
 }
@@ -40,13 +41,13 @@ impl IndexMut<usize> for RegisterFile {
     }
 }
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, Debug)]
 pub struct EmulatorState {
     pub x: RegisterFile,
     pub pipeline: CVE2Pipeline,
 }
 
-pub fn clock(org_state: &EmulatorState, instruction_map: &BTreeMap<u32, u8>, data_map: &mut BTreeMap<u32, u8>) -> EmulatorState {
+pub fn clock(org_state: &EmulatorState, program: &mut AssembledProgram) -> EmulatorState {
     let mut next_state = *org_state;
 
     // Load the fetched instruction into the instr_rdata lines
@@ -57,10 +58,10 @@ pub fn clock(org_state: &EmulatorState, instruction_map: &BTreeMap<u32, u8>, dat
         let mut instr_bytes: [u8; 4] = [0; 4];
         let success = (0usize..4usize).all(|i| {
             let addr = instr_addr + i as u32;
-            let valid = instruction_map.contains_key(&addr);
+            let valid = program.instruction_memory.contains_key(&addr);
 
             if valid {
-                instr_bytes[i] = instruction_map[&addr];
+                instr_bytes[i] = program.instruction_memory[&addr];
             }
             valid
         });
@@ -103,14 +104,14 @@ pub fn clock(org_state: &EmulatorState, instruction_map: &BTreeMap<u32, u8>, dat
         let mut data_bytes: [u8; 4] = [0; 4];
         let success = (0usize..4usize).all(|i| {
             let addr = data_addr + i as u32;
-            let valid = instruction_map.contains_key(&addr);
+            let valid = program.instruction_memory.contains_key(&addr);
 
             if valid {
                 // Read byte
-                data_bytes[i] = data_map[&addr];
+                data_bytes[i] = program.data_memory[&addr];
                 // If we are writing then write the byte
                 if data_we && bits!(data_be, i) != 0 {
-                    data_map.insert(addr, bits!(data_wdata, i * 8, 8) as u8);
+                    program.data_memory.insert(addr, bits!(data_wdata, i * 8, 8) as u8);
                 }
             }
             valid
@@ -133,4 +134,3 @@ pub fn clock(org_state: &EmulatorState, instruction_map: &BTreeMap<u32, u8>, dat
     next_state.pipeline.ID = next_state.pipeline.IF;
     return next_state;
 }
-

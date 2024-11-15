@@ -1,7 +1,7 @@
 /// Struct representing the datapath for the `cve2_top` module.
 /// Taken from https://github.com/openhwgroup/cve2/blob/main/rtl/cve2_top.sv
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct CVE2Datapath {
     // Clock and Reset
     pub clk_i: bool,  // Input clock signal.
@@ -73,7 +73,7 @@ impl Default for CVE2Datapath {
     }
 }
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, Debug)]
 pub struct CVE2Pipeline {
     pub IF: u32, // Instruction Fetch Buffer
     pub ID: u32, // Instruction Decode Buffer
