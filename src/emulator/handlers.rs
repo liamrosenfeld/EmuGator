@@ -135,7 +135,7 @@ fn BEQ(instr: &Instruction, state: &mut EmulatorState) {
         .unwrap();
 
     // if unaligned on 4-byte boundary
-    if new_pc & 0x003 != 0x00{
+    if new_pc & 0x003 != 0x00 {
         panic!("BEQ instruction immediate it not on a 4-byte boundary");
     }
 
@@ -279,6 +279,7 @@ fn SB(instr: &Instruction, state: &mut EmulatorState) {
         state.x[instr.rs1() as usize] as i32 + instr.immediate(InstructionFormat::S).unwrap();
 
     // set data on pipline
+    state.pipeline.datapath.data_req_o = true;
     state.pipeline.datapath.data_addr_o = addr as u32;
     state.pipeline.datapath.data_we_o = true;
     state.pipeline.datapath.data_be_o = 0x1; // access LSB only
@@ -291,6 +292,7 @@ fn SH(instr: &Instruction, state: &mut EmulatorState) {
         state.x[instr.rs1() as usize] as i32 + instr.immediate(InstructionFormat::S).unwrap();
 
     // set data on pipline
+    state.pipeline.datapath.data_req_o = true;
     state.pipeline.datapath.data_addr_o = addr as u32;
     state.pipeline.datapath.data_we_o = true;
     state.pipeline.datapath.data_be_o = 0x7; // access all 4 bytes
@@ -298,14 +300,15 @@ fn SH(instr: &Instruction, state: &mut EmulatorState) {
 }
 
 fn SW(instr: &Instruction, state: &mut EmulatorState) {
-    let data = state.x[instr.rs2() as usize] & 0xFFFF;
+    let data = state.x[instr.rs2() as usize];
     let addr =
         state.x[instr.rs1() as usize] as i32 + instr.immediate(InstructionFormat::S).unwrap();
 
     // set data on pipline
+    state.pipeline.datapath.data_req_o = true;
     state.pipeline.datapath.data_addr_o = addr as u32;
     state.pipeline.datapath.data_we_o = true;
-    state.pipeline.datapath.data_be_o = 0x3; // access last two bytes
+    state.pipeline.datapath.data_be_o = 0xF; // access all 4 bytes
     state.pipeline.datapath.data_wdata_o = data;
 }
 
@@ -368,7 +371,6 @@ fn SLLI(instr: &Instruction, state: &mut EmulatorState) {
     let rs = instr.rs1() as usize;
     let immediate = instr.immediate(InstructionFormat::I).unwrap() as u32;
 
-    // TODO: ask christo if I can ignore the 0x1F
     state.x[rd] = state.x[rs] << (immediate & 0x1F);
 }
 
@@ -382,12 +384,31 @@ fn SRxI(instr: &Instruction, state: &mut EmulatorState) {
     state.x[rd] = state.x[rs] >> (immediate & 0x1F) | (bitmask!(31;32-shamt) * bits!(state.x[rs], 31) * bits!(instr.raw(), 30));
 }
 
+fn SRAI(instr: &Instruction, state: &mut EmulatorState) {
+    let rd = instr.rd() as usize;
+    let rs = instr.rs1() as usize;
+    let immediate = instr.immediate(InstructionFormat::I).unwrap() as u32;
+
+    // TODO: ask christo if I can ignore the 0x1F
+    state.x[rd] = state.x[rs] >> (immediate & 0x1F);
+    if (bits!(instr.raw(), 30) == 0) {
+        // SRLI
+        println!("SRLI: {}", format!("SRLI {:#b}", immediate));
+        state.x[rd] = state.x[rs] >> (immediate & 0x1F);
+    } else {
+        // SRAI
+        println!("SRAI: {}", format!("SRLI {:#b}", immediate));
+        let n = -1;
+        println!("TEST: {}", format!("TEST {:#b}", -10_i32.checked_shr(u32::MAX).unwrap_or(-1)));
+    }
+}
+
 fn ADD(instr: &Instruction, state: &mut EmulatorState) {
     let rd = instr.rd() as usize;
     let rs1 = instr.rs1() as usize;
     let rs2 = instr.rs2() as usize;
 
-    state.x[rd] = state.x[rs1] + state.x[rs2];
+    state.x[rd] = (state.x[rs1] as i32 + state.x[rs2] as i32) as u32;
 }
 
 fn SUB(instr: &Instruction, state: &mut EmulatorState) {
@@ -395,7 +416,7 @@ fn SUB(instr: &Instruction, state: &mut EmulatorState) {
     let rs1 = instr.rs1() as usize;
     let rs2 = instr.rs2() as usize;
 
-    state.x[rd] = state.x[rs1] - state.x[rs2];
+    state.x[rd] = (state.x[rs1] as i32 - state.x[rs2] as i32) as u32;
 }
 
 fn SLL(instr: &Instruction, state: &mut EmulatorState) {
@@ -403,7 +424,7 @@ fn SLL(instr: &Instruction, state: &mut EmulatorState) {
     let rs1 = instr.rs1() as usize;
     let rs2 = instr.rs2() as usize;
 
-    state.x[rd] = state.x[rs1] << state.x[rs2];
+    state.x[rd] = state.x[rs1] << (state.x[rs2] & 0x1F);
 }
 
 fn SLT(instr: &Instruction, state: &mut EmulatorState) {
@@ -439,7 +460,6 @@ fn SRL(instr: &Instruction, state: &mut EmulatorState) {
     let rs1 = instr.rs1() as usize;
     let rs2 = instr.rs2() as usize;
 
-    // TODO: ask christo if I can ignore the 0x1F
     state.x[rd] = state.x[rs1] >> (state.x[rs2] & 0x1F);
 }
 
@@ -464,7 +484,7 @@ fn AND(instr: &Instruction, state: &mut EmulatorState) {
     let rs1 = instr.rs1() as usize;
     let rs2 = instr.rs2() as usize;
 
-    state.x[rd] = state.x[rs1] | state.x[rs2];
+    state.x[rd] = state.x[rs1] & state.x[rs2];
 }
 
 fn FENCE(instr: &Instruction, state: &mut EmulatorState) {
