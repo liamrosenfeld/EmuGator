@@ -19,7 +19,7 @@ pub type InstructionHandler = fn(&Instruction, &mut EmulatorState);
 
 #[derive(Copy, Clone, Default, Debug)]
 pub struct RegisterFile {
-    x: [u32; 32],
+    pub x: [u32; 32],
 }
 
 impl Index<usize> for RegisterFile {
