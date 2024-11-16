@@ -971,13 +971,13 @@ fn test_SRAI() {
             ISA::SRAI.build(Operands {
                 rd: 2,
                 rs1: 1,
-                imm: -1,
+                imm: -1 & 0x1F | 1 << 10,
                 ..Default::default()
             }),
             ISA::SRAI.build(Operands {
                 rd: 3,
                 rs1: 1,
-                imm: 0b100001,
+                imm: 0b100001 & 0x1F | 1 << 10,
                 ..Default::default()
             }),
             ISA::SRAI.build(Operands {

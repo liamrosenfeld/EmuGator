@@ -2,7 +2,7 @@
 
 use super::{EmulatorState, InstructionHandler};
 use crate::isa::{Instruction, InstructionFormat};
-use crate::{bits, bitmask};
+use crate::{bitmask, bits};
 
 pub fn get_handler(instr: Instruction) -> Result<InstructionHandler, ()> {
     match (instr.opcode(), instr.funct3(), instr.funct7()) {
@@ -379,27 +379,11 @@ fn SRxI(instr: &Instruction, state: &mut EmulatorState) {
     let rs = instr.rs1() as usize;
     let immediate = instr.immediate(InstructionFormat::I).unwrap() as u32;
 
-    // TODO: ask christo if I can ignore the 0x1F
-    let shamt = immediate & 0x1F;
-    state.x[rd] = state.x[rs] >> (immediate & 0x1F) | (bitmask!(31;32-shamt) * bits!(state.x[rs], 31) * bits!(instr.raw(), 30));
-}
-
-fn SRAI(instr: &Instruction, state: &mut EmulatorState) {
-    let rd = instr.rd() as usize;
-    let rs = instr.rs1() as usize;
-    let immediate = instr.immediate(InstructionFormat::I).unwrap() as u32;
-
-    // TODO: ask christo if I can ignore the 0x1F
-    state.x[rd] = state.x[rs] >> (immediate & 0x1F);
     if (bits!(instr.raw(), 30) == 0) {
-        // SRLI
-        println!("SRLI: {}", format!("SRLI {:#b}", immediate));
         state.x[rd] = state.x[rs] >> (immediate & 0x1F);
     } else {
         // SRAI
-        println!("SRAI: {}", format!("SRLI {:#b}", immediate));
-        let n = -1;
-        println!("TEST: {}", format!("TEST {:#b}", -10_i32.checked_shr(u32::MAX).unwrap_or(-1)));
+        state.x[rd] = (state.x[rs] as i32 >> (immediate & 0x1F)) as u32;
     }
 }
 
@@ -468,7 +452,7 @@ fn SRA(instr: &Instruction, state: &mut EmulatorState) {
     let rs1 = instr.rs1() as usize;
     let rs2 = instr.rs2() as usize;
 
-    state.x[rd] = state.x[rs1] >> state.x[rs2];
+    state.x[rd] = (state.x[rs1] as i32 >> (state.x[rs2] & 0x1F)) as u32;
 }
 
 fn OR(instr: &Instruction, state: &mut EmulatorState) {
