@@ -6,7 +6,7 @@ use register_view::RegisterView;
 use std::ops::Deref;
 
 use crate::{
-    assembler::{self, AssembledProgram},
+    assembler::{self, AssembledProgram, Section},
     code_editor::CodeEditor,
     emulator::{self, EmulatorState},
     include_test_file,
@@ -43,7 +43,9 @@ pub fn App() -> Element {
                         onclick: move |_| {
                             match assembler::assemble(&source.read()) {
                                 Ok(assembled) => {
-                                    emulator_state.set(EmulatorState::default());
+                                    let mut new_state = EmulatorState::default();
+                                    new_state.pipeline.datapath.instr_addr_o = assembled.get_section_start(Section::Text);
+                                    emulator_state.set(new_state);
                                     assembled_program.set(Some(assembled));
                                 }
                                 Err(e) => {
