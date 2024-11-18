@@ -30,7 +30,7 @@ pub fn InstructionView(assembled_program: Signal<Option<AssembledProgram>>) -> E
                 h1 { class: "text-lg font-mono font-bold text-gray-900", "Instruction Memory" }
             }
             div { 
-                class: "grid gap-2 overflow-auto max-h-[calc(100vh-12rem)]",
+                class: "grid gap-2 overflow-auto max-h-[calc(100vh-12rem)] pr-2",
                 for row in (0..total_instructions).step_by(num_columns) {
                     div { 
                         class: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2",

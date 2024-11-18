@@ -24,7 +24,7 @@ pub fn RegisterView(emulator_state: Signal<EmulatorState>) -> Element {
                 }
             }
             div { 
-                class: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 overflow-auto max-h-[calc(100vh-12rem)]",
+                class: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 overflow-auto max-h-[calc(100vh-12rem)] pr-2",
                 for c in 0..4 {
                     div { class: "bg-white rounded shadow-sm p-2",
                         div { class: "grid gap-1",
