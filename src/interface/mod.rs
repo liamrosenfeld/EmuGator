@@ -1,8 +1,10 @@
 mod register_view;
+mod instruction_views;
 
 use dioxus::prelude::*;
 use dioxus_logger::tracing::info;
-use register_view::RegisterView;
+use self::register_view::RegisterView;
+use self::instruction_views::InstructionView;
 use std::ops::Deref;
 
 use crate::{
@@ -38,32 +40,40 @@ pub fn App() -> Element {
                 class: "w-1/2 flex flex-col",
                 div {
                     class: "h-1/3 bg-gray-200 p-4",
-                    button {
-                        class: "bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded",
-                        onclick: move |_| {
-                            match assembler::assemble(&source.read()) {
-                                Ok(assembled) => {
-                                    emulator_state.set(EmulatorState::default());
-                                    assembled_program.set(Some(assembled));
-                                }
-                                Err(e) => {
-                                    info!("Error assembling program: {}", e);
-                                }
-                            }
-                        }, "Start"
+                    // Debug state display
+                    div { class: "mb-4 font-mono text-sm whitespace-pre overflow-auto",
+                        "{emulator_state:?}"
                     }
-                    if assembled_program.read().is_some() {
+                    // Buttons
+                    div { class: "flex gap-2",
                         button {
-                            class: "bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded",
+                            class: "bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded",
                             onclick: move |_| {
-                                if let Some(mut program) = assembled_program.as_mut() {
-                                    let new_state = emulator::clock(emulator_state.read().deref(), &mut *program);
-                                    *(emulator_state.write()) = new_state;
+                                match assembler::assemble(&source.read()) {
+                                    Ok(assembled) => {
+                                        emulator_state.set(EmulatorState::default());
+                                        assembled_program.set(Some(assembled));
+                                    }
+                                    Err(e) => {
+                                        info!("Error assembling program: {}", e);
+                                    }
                                 }
-                            }, "Next"
+                            },
+                            "Start"
+                        }
+                        if assembled_program.read().is_some() {
+                            button {
+                                class: "bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded",
+                                onclick: move |_| {
+                                    if let Some(mut program) = assembled_program.as_mut() {
+                                        let new_state = emulator::clock(emulator_state.read().deref(), &mut *program);
+                                        *(emulator_state.write()) = new_state;
+                                    }
+                                },
+                                "Next"
+                            }
                         }
                     }
-                    "{emulator_state:?}",
                 }
                 div {
                     class: "h-1/3 bg-gray-300 p-4",
@@ -73,7 +83,9 @@ pub fn App() -> Element {
                 }
                 div {
                     class: "h-1/3 bg-gray-400 p-4",
-                    "{assembled_program:?}",
+                    InstructionView {
+                        assembled_program: assembled_program
+                    }
                 }
             }
         }
