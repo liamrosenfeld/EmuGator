@@ -3,7 +3,7 @@ use crate::assembler::{AssembledProgram, Section};
 
 #[component]
 #[allow(non_snake_case)]
-pub fn InstructionView(assembled_program: Signal<Option<AssembledProgram>>) -> Element {
+pub fn DataView(assembled_program: Signal<Option<AssembledProgram>>) -> Element {
     let program = assembled_program.read();
     
     // Early return if no program is assembled
@@ -16,23 +16,23 @@ pub fn InstructionView(assembled_program: Signal<Option<AssembledProgram>>) -> E
     }
 
     let program = program.as_ref().unwrap();
-    let instruction_memory = &program.instruction_memory;
-    let text_start = program.get_section_start(Section::Text) as usize;
+    let data_memory = &program.data_memory;
+    let data_start = program.get_section_start(Section::Data) as usize;
     
-    let total_instructions = instruction_memory.len() / 4; // Since each instruction is 4 bytes
+    let total_words = data_memory.len() / 4;
 
     rsx! {
         div { class: "h-full overflow-hidden",
             div { 
                 class: "h-full overflow-auto pr-2",
                 div { class: "bg-white rounded shadow-sm p-2",
-                    for i in 0..total_instructions {
+                    for i in 0..total_words {
                         {
-                            let base_addr = text_start + i * 4;
+                            let base_addr = data_start + i * 4;
                             rsx! {
                                 div { 
                                     class: {
-                                        if i < total_instructions - 1 {
+                                        if i < total_words - 1 {
                                             "flex justify-between items-center border-b border-gray-100 py-1"
                                         } else {
                                             "flex justify-between items-center py-1"
@@ -43,21 +43,16 @@ pub fn InstructionView(assembled_program: Signal<Option<AssembledProgram>>) -> E
                                             div { class: "font-mono text-gray-500 text-xs",
                                                 "0x{base_addr:04x}:"
                                             }
-                                            if let Some(line) = program.source_map.get(&(base_addr as u32)) {
-                                                span { class: "text-xs text-gray-500",
-                                                    "Line {line}"
-                                                }
-                                            }
                                         }
                                         div { class: "font-mono font-bold",
                                             {
-                                                let instruction = (instruction_memory.get(&(base_addr as u32)).copied().unwrap_or(0) as u32) |
-                                                    ((instruction_memory.get(&((base_addr + 1) as u32)).copied().unwrap_or(0) as u32) << 8) |
-                                                    ((instruction_memory.get(&((base_addr + 2) as u32)).copied().unwrap_or(0) as u32) << 16) |
-                                                    ((instruction_memory.get(&((base_addr + 3) as u32)).copied().unwrap_or(0) as u32) << 24);
+                                                let word = (data_memory.get(&(base_addr as u32)).copied().unwrap_or(0) as u32) |
+                                                    ((data_memory.get(&((base_addr + 1) as u32)).copied().unwrap_or(0) as u32) << 8) |
+                                                    ((data_memory.get(&((base_addr + 2) as u32)).copied().unwrap_or(0) as u32) << 16) |
+                                                    ((data_memory.get(&((base_addr + 3) as u32)).copied().unwrap_or(0) as u32) << 24);
                                                 
                                                 rsx! {
-                                                    "0x{instruction:08x}"
+                                                    "0x{word:08x}"
                                                 }
                                             }
                                         }

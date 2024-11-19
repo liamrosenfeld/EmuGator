@@ -1,10 +1,12 @@
 mod register_view;
 mod instruction_views;
+mod data_views;
+mod memory_view;
 
 use dioxus::prelude::*;
 use dioxus_logger::tracing::info;
 use self::register_view::RegisterView;
-use self::instruction_views::InstructionView;
+use self::memory_view::MemoryView;
 use std::ops::Deref;
 
 use crate::{
@@ -85,7 +87,7 @@ pub fn App() -> Element {
                 }
                 div {
                     class: "h-1/3 bg-gray-400 p-4",
-                    InstructionView {
+                    MemoryView {
                         assembled_program: assembled_program
                     }
                 }
