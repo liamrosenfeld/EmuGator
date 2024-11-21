@@ -86,7 +86,7 @@ fn JAL(instr: &Instruction, state: &mut EmulatorState) {
         .datapath
         .instr_addr_o
         .checked_add_signed(immed)
-        .unwrap();
+        .unwrap() - 8;
 
     // if unaligned on 4-byte boundary
     if new_pc & 0x00000003 != 0x00 {
@@ -94,7 +94,7 @@ fn JAL(instr: &Instruction, state: &mut EmulatorState) {
     }
     // stores pc+4 into rd
     let rd = instr.rd() as usize;
-    state.x[rd] = state.pipeline.datapath.instr_addr_o + 4;
+    state.x[rd] = state.pipeline.datapath.instr_addr_o + 4 - 8;
 
     // update PC
     state.pipeline.datapath.instr_addr_o = new_pc;
@@ -103,14 +103,7 @@ fn JAL(instr: &Instruction, state: &mut EmulatorState) {
 fn JALR(instr: &Instruction, state: &mut EmulatorState) {
     // TODO: Push onto RAS
     let immed = (instr.immediate(InstructionFormat::I)).unwrap();
-    let new_pc = (state
-        .pipeline
-        .datapath
-        .instr_addr_o
-        .checked_add_signed(immed)
-        .unwrap()
-        + state.x[instr.rs1() as usize])
-        & 0xFFFFFFFE;
+    let new_pc = state.x[instr.rs1() as usize] & 0xFFFFFFFE;
 
     // if unaligned on 4-byte boundary
     if new_pc & 0x003 != 0x00 {
@@ -119,7 +112,7 @@ fn JALR(instr: &Instruction, state: &mut EmulatorState) {
 
     // stores pc+4 into rd
     let rd = instr.rd() as usize;
-    state.x[rd] = state.pipeline.datapath.instr_addr_o + 4;
+    state.x[rd] = state.pipeline.datapath.instr_addr_o + 4 - 8;
 
     // update PC
     state.pipeline.datapath.instr_addr_o = new_pc;
@@ -152,7 +145,7 @@ fn BNE(instr: &Instruction, state: &mut EmulatorState) {
         .datapath
         .instr_addr_o
         .checked_add_signed(immed)
-        .unwrap();
+        .unwrap() - 8;
 
     // if unaligned on 4-byte boundary
     if new_pc & 0x003 != 0x00 {
