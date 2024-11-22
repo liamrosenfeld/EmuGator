@@ -47,7 +47,11 @@ pub struct EmulatorState {
     pub pipeline: CVE2Pipeline,
 }
 
-pub fn clock(org_state: &EmulatorState, instruction_map: &BTreeMap<u32, u8>, data_map: &mut BTreeMap<u32, u8>) -> EmulatorState {
+pub fn clock(
+    org_state: &EmulatorState,
+    instruction_map: &BTreeMap<u32, u8>,
+    data_map: &mut BTreeMap<u32, u8>,
+) -> EmulatorState {
     let mut next_state = org_state.clone();
 
     // Load the fetched instruction into the instr_rdata lines
@@ -134,4 +138,3 @@ pub fn clock(org_state: &EmulatorState, instruction_map: &BTreeMap<u32, u8>, dat
     next_state.pipeline.ID = next_state.pipeline.IF;
     return next_state;
 }
-

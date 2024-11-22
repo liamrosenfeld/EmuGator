@@ -1,7 +1,10 @@
 #[cfg(test)]
 mod tests;
 
-use std::{collections::{BTreeMap, HashMap}, str::FromStr};
+use std::{
+    collections::{BTreeMap, HashMap},
+    str::FromStr,
+};
 
 use crate::isa::{Instruction, InstructionDefinition, InstructionFormat, Operands, ISA};
 
@@ -17,7 +20,6 @@ struct DataItem {
     values: Vec<u8>,
 }
 
-
 struct Assembler();
 
 impl Assembler {
@@ -30,13 +32,13 @@ impl Assembler {
         if parts.is_empty() || !parts[0].starts_with('.') {
             return None;
         }
-    
+
         let section = match parts[0] {
             ".data" => Some(Section::Data),
             ".text" => Some(Section::Text),
             _ => None,
         }?;
-    
+
         let address = if parts.len() > 1 {
             // Parse hex or decimal address
             if parts[1].starts_with("0x") {
@@ -47,7 +49,7 @@ impl Assembler {
         } else {
             0 // Default address
         };
-    
+
         Some((section, address))
     }
 
@@ -56,16 +58,16 @@ impl Assembler {
         let mut current_section = Section::Text;
         let mut text_address = 0;
         let mut data_address = 0;
-    
+
         // First pass: collect labels and process data
         for (line_num, line) in program.lines().enumerate() {
             let line = self.clean_line(line);
             if line.is_empty() {
                 continue;
             }
-    
+
             let (label_opt, content) = self.split_label_and_content(&line);
-    
+
             // Handle section directives with optional address
             if let Some((section, address)) = self.parse_section_directive(&content) {
                 current_section = section;
@@ -75,7 +77,7 @@ impl Assembler {
                 }
                 continue;
             }
-    
+
             // Handle label if present
             if let Some(label) = label_opt {
                 match current_section {
@@ -87,12 +89,12 @@ impl Assembler {
                     }
                 }
             }
-    
+
             // If there's no content after the label, continue to next line
             if content.is_empty() {
                 continue;
             }
-    
+
             // Handle data directives
             if content.starts_with('.') {
                 if current_section == Section::Data {
@@ -109,28 +111,28 @@ impl Assembler {
                 }
                 continue;
             }
-    
+
             // Count instruction size for text section
             if current_section == Section::Text && !content.is_empty() {
                 text_address += 4;
             }
         }
-    
+
         // Second pass: assemble instructions
         current_section = Section::Text;
         text_address = assembled.get_section_start(Section::Text);
-    
+
         for (line_num, line) in program.lines().enumerate() {
             let line = self.clean_line(line);
             if line.is_empty() {
                 continue;
             }
-    
+
             let (_, content) = self.split_label_and_content(&line);
             if content.is_empty() {
                 continue;
             }
-    
+
             // Handle section directives
             if let Some((section, address)) = self.parse_section_directive(&content) {
                 current_section = section;
@@ -140,7 +142,7 @@ impl Assembler {
                 }
                 continue;
             }
-    
+
             if current_section == Section::Text && !content.starts_with('.') {
                 match self.parse_instruction(
                     &content,
@@ -157,7 +159,7 @@ impl Assembler {
                 }
             }
         }
-    
+
         Ok(assembled)
     }
 
@@ -264,14 +266,16 @@ impl Assembler {
             .split(|c| c == ' ' || c == ',')
             .filter(|s| !s.is_empty())
             .collect();
-    
+
         if parts.is_empty() {
             return Err("Empty instruction".to_string());
         }
-    
+
         let name = parts[0].to_uppercase();
-        let def = ISA::from_str(&name).map_err(|_| format!("Unknown instruction: {}", name))?.definition();
-    
+        let def = ISA::from_str(&name)
+            .map_err(|_| format!("Unknown instruction: {}", name))?
+            .definition();
+
         if def.format == InstructionFormat::I && def.opcode == 0b0000011
             || def.format == InstructionFormat::S && def.opcode == 0b0100011
         {
@@ -288,7 +292,7 @@ impl Assembler {
                 };
             }
         }
-    
+
         match def.format {
             InstructionFormat::R => self.parse_r_type(&parts, def),
             InstructionFormat::I => self.parse_i_type(&parts, def),
@@ -299,7 +303,11 @@ impl Assembler {
         }
     }
 
-    fn parse_r_type(&self, parts: &[&str], def: InstructionDefinition) -> Result<Instruction, String> {
+    fn parse_r_type(
+        &self,
+        parts: &[&str],
+        def: InstructionDefinition,
+    ) -> Result<Instruction, String> {
         if parts.len() != 4 {
             return Err("R-type instructions need 3 registers".to_string());
         }
@@ -312,7 +320,11 @@ impl Assembler {
         Ok(Instruction::from_def_operands(def, operands))
     }
 
-    fn parse_i_type(&self, parts: &[&str], def: InstructionDefinition) -> Result<Instruction, String> {
+    fn parse_i_type(
+        &self,
+        parts: &[&str],
+        def: InstructionDefinition,
+    ) -> Result<Instruction, String> {
         match def.opcode {
             0b0000011 => self.parse_load_type(&parts, def),
             0b1110011 => {
@@ -320,7 +332,7 @@ impl Assembler {
                 if parts.len() != 1 {
                     return Err("ECALL/EBREAK instructions take no operands".to_string());
                 }
-    
+
                 let operands = Operands {
                     rd: 0,
                     rs1: 0,
@@ -337,7 +349,7 @@ impl Assembler {
                 if parts.len() != 1 {
                     return Err("FENCE instruction takes no operands".to_string());
                 }
-    
+
                 let operands = Operands {
                     rd: 0,
                     rs1: 0,
@@ -350,21 +362,23 @@ impl Assembler {
                 if parts.len() != 4 {
                     return Err("I-type instructions need 2 registers and an immediate".to_string());
                 }
-    
+
                 let mut imm = self.parse_immediate(parts[3])?;
                 if imm > 2047 || imm < -2048 {
                     return Err("Immediate value out of range (-2048 to 2047)".to_string());
                 }
-    
+
                 if let Some(funct7) = def.funct7 {
                     // Shift instructions (immediate split into funct7 and shamt)
-                    if def.opcode == 0b0010011 && (def.funct3 == Some(0x1) || def.funct3 == Some(0x5)) {
+                    if def.opcode == 0b0010011
+                        && (def.funct3 == Some(0x1) || def.funct3 == Some(0x5))
+                    {
                         // SLLI, SRLI, SRAI
                         let shamt = imm & 0x1F; // Bottom 5 bits only
                         imm = ((funct7 as i32) << 5) | shamt; // Combine funct7 and shamt
                     }
                 }
-    
+
                 let operands = Operands {
                     rd: self.parse_register(parts[1])?,
                     rs1: self.parse_register(parts[2])?,
@@ -396,7 +410,11 @@ impl Assembler {
         Ok(Instruction::from_def_operands(def, operands))
     }
 
-    fn parse_s_type(&self, parts: &[&str], def: InstructionDefinition) -> Result<Instruction, String> {
+    fn parse_s_type(
+        &self,
+        parts: &[&str],
+        def: InstructionDefinition,
+    ) -> Result<Instruction, String> {
         if parts.len() != 3 {
             return Err("Store instructions need a register and a memory address".to_string());
         }
@@ -444,20 +462,24 @@ impl Assembler {
         Ok(Instruction::from_def_operands(def, operands))
     }
 
-    fn parse_u_type(&self, parts: &[&str], def: InstructionDefinition) -> Result<Instruction, String> {
+    fn parse_u_type(
+        &self,
+        parts: &[&str],
+        def: InstructionDefinition,
+    ) -> Result<Instruction, String> {
         if parts.len() != 3 {
             return Err("U-type instructions need a register and an immediate".to_string());
         }
-    
+
         let imm = self.parse_immediate(parts[2])?;
-        
+
         // For LUI/AUIPC, we want to allow full 20-bit immediate values
         let imm_value = if imm < 0 {
             (((-imm) as u32) & 0xFFFFF) | 0xFFF00000
         } else {
             (imm as u32) & 0xFFFFF
         };
-    
+
         let operands = Operands {
             rd: self.parse_register(parts[1])?,
             imm: (imm_value as i32) >> 12,
@@ -509,18 +531,18 @@ impl Assembler {
             .split(|c| c == '(' || c == ')')
             .filter(|s| !s.is_empty())
             .collect();
-    
+
         if parts.len() != 2 {
             return Err("Memory address must be in format: offset(register)".to_string());
         }
-    
+
         let offset = self.parse_immediate(parts[0])?;
         if offset > 2047 || offset < -2048 {
             return Err("Memory offset out of range (-2048 to 2047)".to_string());
         }
-    
+
         let reg = self.parse_register(parts[1])?;
-    
+
         Ok((offset, reg))
     }
 
@@ -543,13 +565,14 @@ impl Assembler {
         } else {
             (false, value)
         };
-    
+
         let abs_value = if value.starts_with("0x") {
             i32::from_str_radix(&value[2..], 16)
         } else {
             value.parse::<i32>()
-        }.map_err(|_| format!("Invalid immediate value: {}", value))?;
-    
+        }
+        .map_err(|_| format!("Invalid immediate value: {}", value))?;
+
         if is_negative {
             Ok(-abs_value)
         } else {

@@ -1,4 +1,4 @@
-use js_sys::{Object, Array};
+use js_sys::{Array, Object};
 use monaco::sys::languages::{self, ILanguageExtensionPoint, LanguageConfiguration};
 use wasm_bindgen::prelude::*;
 
