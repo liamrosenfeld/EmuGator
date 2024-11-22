@@ -1643,7 +1643,6 @@ fn test_SB() {
     // SB (x2 := 100) -> Write x2 to address 105 + x0
     emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
     assert_eq!(data_map.get(&105), Some(&100));
-
 }
 
 #[test]
@@ -1718,9 +1717,8 @@ fn test_SH() {
     // SH (x1 := 0xAF0C) -> Write x1 to address 100 + x2
     emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
     assert_eq!(data_map.get(&100), Some(&0xC));
-    assert_eq!(data_map.get(&101), Some(&0xAF)); 
+    assert_eq!(data_map.get(&101), Some(&0xAF));
     assert_eq!(data_map.get(&102), Some(&0));
-
 }
 
 #[test]
@@ -1818,4 +1816,329 @@ fn test_SW() {
     assert_eq!(data_map.get(&101), Some(&0x56));
     assert_eq!(data_map.get(&102), Some(&0x34));
     assert_eq!(data_map.get(&103), Some(&0x12));
+}
+
+#[test]
+fn test_CSRRW() {
+    let mut emulator_state = EmulatorState::default();
+
+    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
+
+    let csr1 = 5;
+    let csr2 = 6;
+
+    populate(
+        &mut instruction_map,
+        &[
+            // set x1 := 42
+            ISA::ADDI.build(Operands {
+                rd: 1,
+                rs1: 0,
+                imm: 42,
+                ..Default::default()
+            }),
+            // set x2 := 100
+            ISA::ADDI.build(Operands {
+                rd: 2,
+                rs1: 0,
+                imm: 100,
+                ..Default::default()
+            }),
+            // CSRRW x1, csr1, x1
+            ISA::CSRRW.build(Operands {
+                rd: 1,
+                rs1: 1,
+                imm: csr1,
+                ..Default::default()
+            }),
+            // cssrw x2, csr2, x2
+            ISA::CSRRW.build(Operands {
+                rd: 2,
+                rs1: 2,
+                imm: csr2,
+                ..Default::default()
+            }),
+        ],
+    );
+
+    // Instruction fetch
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+
+    // Set x1 := 42
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[1], 42);
+
+    // Set x2 := 100
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[2], 100);
+
+    // CSRRW (x1 := 42) -> Write x1 to csr1
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.csr[&(csr1 as u32)], 42);
+    assert_eq!(emulator_state.x[1], 0);
+
+    // CSRRW (x2 := 100) -> Write x2 to csr2
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.csr[&(csr2 as u32)], 100);
+    assert_eq!(emulator_state.x[2], 0);
+}
+
+#[test]
+fn test_CSRRS() {
+    let mut emulator_state = EmulatorState::default();
+
+    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
+
+    let csr1 = 5;
+
+    populate(
+        &mut instruction_map,
+        &[
+            // set x1 := 42
+            ISA::ADDI.build(Operands {
+                rd: 1,
+                rs1: 0,
+                imm: 42,
+                ..Default::default()
+            }),
+            // set x2 := 100
+            ISA::ADDI.build(Operands {
+                rd: 2,
+                rs1: 0,
+                imm: 100,
+                ..Default::default()
+            }),
+            // CSRRS x1, csr1, x1
+            ISA::CSRRS.build(Operands {
+                rd: 1,
+                rs1: 1,
+                imm: csr1,
+                ..Default::default()
+            }),
+            // cssrs x1, csr1, x2
+            ISA::CSRRS.build(Operands {
+                rd: 1,
+                rs1: 2,
+                imm: csr1,
+                ..Default::default()
+            }),
+        ],
+    );
+
+    // Instruction fetch
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+
+    // Set x1 := 42
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[1], 42);
+
+    // Set x2 := 100
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[2], 100);
+
+    // CSRRS x1, csr1, x1 -> Set csr1 := 0 | 42
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.csr[&(csr1 as u32)], 42);
+    assert_eq!(emulator_state.x[1], 0);
+
+    // CSRRS x1, csr1, x1 -> Set csr1 := 42 | 100
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.csr[&(csr1 as u32)], 42 | 100);
+    assert_eq!(emulator_state.x[1], 42);
+}
+
+#[test]
+fn test_CSRRC() {
+    let mut emulator_state = EmulatorState::default();
+
+    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
+
+    let csr1 = 5;
+
+    populate(
+        &mut instruction_map,
+        &[
+            // set x1 := 42
+            ISA::ADDI.build(Operands {
+                rd: 1,
+                rs1: 0,
+                imm: 42,
+                ..Default::default()
+            }),
+            // set x2 := 100
+            ISA::ADDI.build(Operands {
+                rd: 2,
+                rs1: 0,
+                imm: 100,
+                ..Default::default()
+            }),
+            // CSRRC x1, csr1, x1
+            ISA::CSRRC.build(Operands {
+                rd: 1,
+                rs1: 1,
+                imm: csr1,
+                ..Default::default()
+            }),
+            // cssrc x1, csr1, x2
+            ISA::CSRRC.build(Operands {
+                rd: 1,
+                rs1: 2,
+                imm: csr1,
+                ..Default::default()
+            }),
+        ],
+    );
+
+    // Instruction fetch
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+
+    // Set x1 := 42
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[1], 42);
+
+    // Set x2 := 100
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.x[2], 100);
+
+    // CSRRC x1, csr1, x1 -> Set csr1 := 0 & ~42
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.csr[&(csr1 as u32)], 0);
+    assert_eq!(emulator_state.x[1], 0);
+
+    // CSRRC x1, csr1, x1 -> Set csr1 := 42 & ~100
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.csr[&(csr1 as u32)], 0);
+    assert_eq!(emulator_state.x[1], 0);
+}
+
+#[test]
+fn test_CSRRWI() {
+    let mut emulator_state = EmulatorState::default();
+
+    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
+
+    let csr1 = 5;
+
+    populate(
+        &mut instruction_map,
+        &[
+            // CSRRC x1, csr1, x1
+            ISA::CSRRWI.build(Operands {
+                rd: 1,
+                rs1: 25,
+                imm: csr1,
+                ..Default::default()
+            }),
+            // cssrc x1, csr1, x2
+            ISA::CSRRWI.build(Operands {
+                rd: 1,
+                rs1: 2,
+                imm: csr1,
+                ..Default::default()
+            }),
+        ],
+    );
+
+    // Instruction fetch
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+
+    // CSRRC x1, csr1, 45 -> Set csr1 := 45
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.csr[&(csr1 as u32)], 25);
+    assert_eq!(emulator_state.x[1], 0);
+
+    // CSRRC x1, csr1, 2 -> Set csr1 := 2
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.csr[&(csr1 as u32)], 2);
+    assert_eq!(emulator_state.x[1], 25);
+}
+
+#[test]
+fn test_CSRRSI() {
+    let mut emulator_state = EmulatorState::default();
+
+    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
+
+    let csr1 = 5;
+
+    populate(
+        &mut instruction_map,
+        &[
+            // CSRRSI x1, csr1, x1
+            ISA::CSRRSI.build(Operands {
+                rd: 1,
+                rs1: 25,
+                imm: csr1,
+                ..Default::default()
+            }),
+            // CSRRSI x1, csr1, x2
+            ISA::CSRRSI.build(Operands {
+                rd: 1,
+                rs1: 2,
+                imm: csr1,
+                ..Default::default()
+            }),
+        ],
+    );
+
+    // Instruction fetch
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+
+    // CSRRS x1, csr1, 45 -> Set csr1 := 0 | 25
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.csr[&(csr1 as u32)], 25);
+    assert_eq!(emulator_state.x[1], 0);
+
+    // CSRRS x1, csr1, 2 -> Set csr1 := 2 | 45
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.csr[&(csr1 as u32)], 2 | 25);
+    assert_eq!(emulator_state.x[1], 25);
+}
+
+#[test]
+fn test_CSRRCI() {
+    let mut emulator_state = EmulatorState::default();
+
+    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
+    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
+
+    let csr1 = 5;
+
+    populate(
+        &mut instruction_map,
+        &[
+            // CSRRCI x1, csr1, x1
+            ISA::CSRRCI.build(Operands {
+                rd: 1,
+                rs1: 25,
+                imm: csr1,
+                ..Default::default()
+            }),
+            // CSRRCI x1, csr1, x2
+            ISA::CSRRCI.build(Operands {
+                rd: 1,
+                rs1: 2,
+                imm: csr1,
+                ..Default::default()
+            }),
+        ],
+    );
+
+    // Instruction fetch
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+
+    // CSRRS x1, csr1, 45 -> Set csr1 := 0 | !25
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.csr[&(csr1 as u32)], 0);
+    assert_eq!(emulator_state.x[1], 0);
+
+    // CSRRS x1, csr1, 2 -> Set csr1 := 0 & !2
+    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    assert_eq!(emulator_state.csr[&(csr1 as u32)], 0);
+    assert_eq!(emulator_state.x[1], 0);
 }

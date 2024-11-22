@@ -492,25 +492,95 @@ fn EBREAK(instr: &Instruction, state: &mut EmulatorState) {
 }
 
 fn CSRRW(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+    let csr = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let rd = instr.rd() as usize;
+    let rs1 = instr.rs1() as usize;
+
+    if rd == 0 {
+        return;
+    }
+
+    let tmp = if state.csr.contains_key(&csr) {
+        state.csr[&csr]
+    } else {
+        0
+    };
+
+    state.csr.insert(csr, state.x[rs1]);
+    state.x[rd] = tmp;
 }
 
 fn CSRRS(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+    let csr = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let rd = instr.rd() as usize;
+    let rs1 = instr.rs1() as usize;
+
+    let tmp = if state.csr.contains_key(&csr) {
+        state.csr[&csr]
+    } else {
+        0
+    };
+
+    state.csr.insert(csr, state.x[rs1] | tmp);
+    state.x[rd] = tmp;
 }
 
 fn CSRRC(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+    let csr = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let rd = instr.rd() as usize;
+    let rs1 = instr.rs1() as usize;
+
+    let tmp = if state.csr.contains_key(&csr) {
+        state.csr[&csr]
+    } else {
+        0
+    };
+
+    state.csr.insert(csr, tmp & !state.x[rs1]);
+    state.x[rd] = tmp;
 }
 
 fn CSRRWI(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+    let csr = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let rd = instr.rd() as usize;
+    let zimm = instr.rs1() as u32;
+
+    let tmp = if state.csr.contains_key(&csr) {
+        state.csr[&csr]
+    } else {
+        0
+    };
+
+    state.csr.insert(csr, zimm);
+    state.x[rd] = tmp;
 }
 
 fn CSRRSI(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+    let csr = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let rd = instr.rd() as usize;
+    let zimm = instr.rs1() as u32;
+
+    let tmp = if state.csr.contains_key(&csr) {
+        state.csr[&csr]
+    } else {
+        0
+    };
+
+    state.csr.insert(csr, tmp | zimm);
+    state.x[rd] = tmp;
 }
 
 fn CSRRCI(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+    let csr = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let rd = instr.rd() as usize;
+    let zimm = instr.rs1() as u32;
+
+    let tmp = if state.csr.contains_key(&csr) {
+        state.csr[&csr]
+    } else {
+        0
+    };
+
+    state.csr.insert(csr, tmp & !zimm);
+    state.x[rd] = tmp;
 }
