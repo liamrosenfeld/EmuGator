@@ -6,7 +6,7 @@ use crate::include_test_file;
 #[ignore]
 #[test]
 fn print_some_output() {
-    let program = include_test_file!("syntax-check.s");
+    let program = include_test_file!("simple-loop.s");
     let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
     let (inst_mem, source_map, data_mem) = assembled_program.emulator_maps();
 
@@ -166,7 +166,7 @@ fn assembler_simple_loop() {
         (0x00000016, 0x63),
         (0x00000017, 0x00),
         (0x00000018, 0xE3),
-        (0x00000019, 0x0A),
+        (0x00000019, 0x08),
         (0x0000001A, 0x04),
         (0x0000001B, 0xFE),
         (0x0000001C, 0xB7),
@@ -401,27 +401,27 @@ fn assembler_all_instructions() {
         (0x0000005A, 0x03),
         (0x0000005B, 0x10),
         (0x0000005C, 0x63),
-        (0x0000005D, 0x86),
+        (0x0000005D, 0x84),
         (0x0000005E, 0x62),
         (0x0000005F, 0x04),
         (0x00000060, 0x63),
-        (0x00000061, 0x96),
+        (0x00000061, 0x94),
         (0x00000062, 0x62),
         (0x00000063, 0x04),
         (0x00000064, 0x63),
-        (0x00000065, 0xC6),
+        (0x00000065, 0xC4),
         (0x00000066, 0x62),
         (0x00000067, 0x04),
         (0x00000068, 0x63),
-        (0x00000069, 0xE6),
+        (0x00000069, 0xE4),
         (0x0000006A, 0x62),
         (0x0000006B, 0x04),
         (0x0000006C, 0x63),
-        (0x0000006D, 0xD6),
+        (0x0000006D, 0xD4),
         (0x0000006E, 0x62),
         (0x0000006F, 0x04),
         (0x00000070, 0x63),
-        (0x00000071, 0xF6),
+        (0x00000071, 0xF4),
         (0x00000072, 0x62),
         (0x00000073, 0x04),
         (0x00000074, 0x83),
