@@ -1030,9 +1030,7 @@ fn test_SRLI() {
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
-    populate(
-        &mut instruction_map,
-        &[
+    let mut program = populate(&[
             ISA::ADDI.build(Operands {
                 rd: 1,
                 rs1: 0,
@@ -1061,22 +1059,22 @@ fn test_SRLI() {
     );
 
     // Instruction fetch
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
 
     // Set x1 := 10
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[1], 10);
 
     // SRLI ( x2 := x1 >> 1)
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[2], 5);
 
     // SRLI ( x3 := x1 >> 0b1000010) Should only shift 1 time since we only look at last 5 bits
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[3], 2);
 
     // SRLI ( x0 := x1 << 3 ) <= Should not change x0
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[0], 0);
 }
 
@@ -1087,9 +1085,7 @@ fn test_SRAI() {
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
-    populate(
-        &mut instruction_map,
-        &[
+    let mut program = populate(&[
             ISA::ADDI.build(Operands {
                 rd: 1,
                 rs1: 0,
@@ -1118,22 +1114,22 @@ fn test_SRAI() {
     );
 
     // Instruction fetch
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
 
     // Set x1 := -10
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[1] as i32, -10);
 
     // SRAI ( x2 := x1 >> -1)
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[2] as i32, -1);
 
     // SRAI ( x3 := x1 >> 0b1000001) Should only shift 1 time since we only look at last 5 bits
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[3] as i32, -5);
 
     // SRAI ( x0 := x1 << 3 ) <= Should not change x0
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[0], 0);
 }
 
@@ -1144,9 +1140,7 @@ fn test_ADD() {
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
-    populate(
-        &mut instruction_map,
-        &[
+    let mut program = populate(&[
             // ADDI x1, x0, 15 -> Set x1 := 15
             ISA::ADDI.build(Operands {
                 rd: 1,
@@ -1186,26 +1180,26 @@ fn test_ADD() {
     );
 
     // Instruction fetch
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
 
     // Set x1 := 15
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[1] as i32, 15);
 
     // Set x2 := -10
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[2] as i32, -10);
 
     // ADD (x3 := x1 + x2)
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[3] as i32, 5);
 
     // ADD (x4 := x1 + x1)
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[4] as i32, 30);
 
     // ADD (x0 := x1 + x2) - No change to x0
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[0], 0);
 }
 
@@ -1216,9 +1210,7 @@ fn test_SUB() {
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
-    populate(
-        &mut instruction_map,
-        &[
+    let mut program = populate(&[
             // ADDI x1, x0, 20 -> Set x1 := 20
             ISA::ADDI.build(Operands {
                 rd: 1,
@@ -1265,30 +1257,30 @@ fn test_SUB() {
     );
 
     // Instruction fetch
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
 
     // Set x1 := 20
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[1] as i32, 20);
 
     // Set x2 := 5
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[2] as i32, 5);
 
     // SUB (x3 := x1 - x2)
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[3] as i32, 15);
 
     // SUB (x4 := x2 - x1)
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[4] as i32, -15);
 
     // SUB (x5 := x1 - x1)
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[5] as i32, 0);
 
     // SUB (x0 := x1 - x2) - No change to x0
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[0], 0);
 }
 
@@ -1299,9 +1291,7 @@ fn test_SLL() {
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
-    populate(
-        &mut instruction_map,
-        &[
+    let mut program = populate(&[
             // ADDI x1, x0, 1 -> Set x1 := 1
             ISA::ADDI.build(Operands {
                 rd: 1,
@@ -1355,33 +1345,33 @@ fn test_SLL() {
     );
 
     // Instruction fetch
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
 
     // Set x1 := 1
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[1] as i32, 1);
 
     // Set x2 := 2
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[2] as i32, 2);
 
     // SLL (x3 := x1 << x2)
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[3] as i32, 4);
 
     // Set x2 := 0b100000 (masked to 0)
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
 
     // SLL (x4 := x1 << x2, with x2 effectively 0)
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[4] as i32, 1);
 
     // SLL (x5 := x2 << x2)
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[5] as i32, 32);
 
     // SLL (x0 := x1 << x2) - Ensure no change to x0
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[0], 0);
 }
 
@@ -1392,9 +1382,7 @@ fn test_SLT() {
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
-    populate(
-        &mut instruction_map,
-        &[
+    let mut program = populate(&[
             // ADDI x1, x0, 5 -> Set x1 := 5
             ISA::ADDI.build(Operands {
                 rd: 1,
@@ -1434,16 +1422,16 @@ fn test_SLT() {
     );
 
     // Execute each instruction and validate
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map); // Set x1 = 5
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map); // Set x2 = 10
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program); // Set x1 = 5
+    emulator_state = clock(&emulator_state, &mut program); // Set x2 = 10
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[3], 1); // x3 = 1 (5 < 10)
 
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[4], 0); // x4 = 0 (10 < 5 false)
 
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[5], 0); // x5 = 0 (5 < 5 false)
 }
 
@@ -1454,9 +1442,7 @@ fn test_SLTU() {
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
-    populate(
-        &mut instruction_map,
-        &[
+    let mut program = populate(&[
             // ADDI x1, x0, -1 -> Set x1 := -1 (interpreted as 0xFFFFFFFF unsigned)
             ISA::ADDI.build(Operands {
                 rd: 1,
@@ -1488,13 +1474,13 @@ fn test_SLTU() {
         ],
     );
 
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map); // Set x1 = -1 (0xFFFFFFFF unsigned)
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map); // Set x2 = 1
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program); // Set x1 = -1 (0xFFFFFFFF unsigned)
+    emulator_state = clock(&emulator_state, &mut program); // Set x2 = 1
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[3], 1); // x3 = 1 (1 < 0xFFFFFFFF true)
 
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[4], 0); // x4 = 0 (0xFFFFFFFF < 1 false)
 }
 
@@ -1505,9 +1491,7 @@ fn test_XOR() {
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
-    populate(
-        &mut instruction_map,
-        &[
+    let mut program = populate(&[
             // ADDI x1, x0, 0b1100 -> Set x1 := 12
             ISA::ADDI.build(Operands {
                 rd: 1,
@@ -1532,10 +1516,10 @@ fn test_XOR() {
         ],
     );
 
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
 
     assert_eq!(emulator_state.x[3], 0b0110); // x3 = 6 (0b1100 ^ 0b1010)
 }
@@ -1547,9 +1531,7 @@ fn test_SRL() {
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
-    populate(
-        &mut instruction_map,
-        &[
+    let mut program = populate(&[
             // ADDI x1, x0, 16 -> Set x1 := 16 (0b10000)
             ISA::ADDI.build(Operands {
                 rd: 1,
@@ -1574,10 +1556,10 @@ fn test_SRL() {
         ],
     );
 
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
 
     assert_eq!(emulator_state.x[3], 4); // x3 = 4 (16 >> 2)
 }
@@ -1589,9 +1571,7 @@ fn test_SRA() {
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
-    populate(
-        &mut instruction_map,
-        &[
+    let mut program = populate(&[
             // ADDI x1, x0, -16 -> Set x1 := -16
             ISA::ADDI.build(Operands {
                 rd: 1,
@@ -1616,10 +1596,10 @@ fn test_SRA() {
         ],
     );
 
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
 
     assert_eq!(emulator_state.x[3] as i32, -4); // x3 = -4 (-16 >> 2, arithmetic)
 }
@@ -1631,9 +1611,7 @@ fn test_OR() {
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
-    populate(
-        &mut instruction_map,
-        &[
+    let mut program = populate(&[
             // ADDI x1, x0, 0b1100 -> Set x1 := 12
             ISA::ADDI.build(Operands {
                 rd: 1,
@@ -1658,10 +1636,10 @@ fn test_OR() {
         ],
     );
 
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
 
     assert_eq!(emulator_state.x[3], 0b1110); // x3 = 14 (0b1100 | 0b1010)
 }
@@ -1673,9 +1651,7 @@ fn test_AND() {
     let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
     let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
-    populate(
-        &mut instruction_map,
-        &[
+    let mut program = populate(&[
             // ADDI x1, x0, 0b1100 -> Set x1 := 12
             ISA::ADDI.build(Operands {
                 rd: 1,
@@ -1700,10 +1676,10 @@ fn test_AND() {
         ],
     );
 
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
 
     assert_eq!(emulator_state.x[3], 0b1000); // x3 = 8 (0b1100 & 0b1010)
 }
@@ -1719,9 +1695,7 @@ fn test_SB() {
     data_map.insert(100, 0);
     data_map.insert(105, 0);
 
-    populate(
-        &mut instruction_map,
-        &[
+    let mut program = populate(&[
             // Set x1 := 10 (Data to write)
             ISA::ADDI.build(Operands {
                 rd: 1,
@@ -1756,20 +1730,20 @@ fn test_SB() {
     );
 
     // Instruction fetch
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
 
     // Set x1 := 10
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
 
     // Set x2 := 100
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
 
     // SB (x1 := 10) -> Write x1 to address 100 + x2
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(data_map.get(&100), Some(&10)); // x1 = 10 (100 + x2)
 
     // SB (x2 := 100) -> Write x2 to address 105 + x0
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(data_map.get(&105), Some(&100));
 }
 
@@ -1785,9 +1759,7 @@ fn test_SH() {
     data_map.insert(101, 0);
     data_map.insert(102, 0);
 
-    populate(
-        &mut instruction_map,
-        &[
+    let mut program = populate(&[
             // Set x1 := 10 (Data to write)
             ISA::ADDI.build(Operands {
                 rd: 1,
@@ -1828,22 +1800,22 @@ fn test_SH() {
     );
 
     // Instruction fetch
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
 
     // Set x1 := 0xAF
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
 
     // Set x1 := x1 << 8 (0xAF << 8 = 0xAF00)
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
 
     // Add 12 to x1
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
 
     // Set x2 := 100
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
 
     // SH (x1 := 0xAF0C) -> Write x1 to address 100 + x2
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(data_map.get(&100), Some(&0xC));
     assert_eq!(data_map.get(&101), Some(&0xAF));
     assert_eq!(data_map.get(&102), Some(&0));
@@ -1862,9 +1834,7 @@ fn test_SW() {
     data_map.insert(102, 0);
     data_map.insert(103, 0);
 
-    populate(
-        &mut instruction_map,
-        &[
+    let mut program = populate(&[
             // Set x1 := 0x12345678 (Data to write)
             ISA::ADDI.build(Operands {
                 rd: 1,
@@ -1927,19 +1897,19 @@ fn test_SW() {
     );
 
     // Instruction fetch
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
 
     // Set x1 := 0x12345678
     for i in 0..8 {
-        emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+        emulator_state = clock(&emulator_state, &mut program);
     }
     assert_eq!(emulator_state.x[1], 0x12345678);
 
     // Set x2 := 100
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
 
     // SW (x1 := 0x12345678) -> Write x1 to address 100 + x2
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(data_map.get(&100), Some(&0x78));
     assert_eq!(data_map.get(&101), Some(&0x56));
     assert_eq!(data_map.get(&102), Some(&0x34));
@@ -1956,9 +1926,7 @@ fn test_CSRRW() {
     let csr1 = 5;
     let csr2 = 6;
 
-    populate(
-        &mut instruction_map,
-        &[
+    let mut program = populate(&[
             // set x1 := 42
             ISA::ADDI.build(Operands {
                 rd: 1,
@@ -1991,23 +1959,23 @@ fn test_CSRRW() {
     );
 
     // Instruction fetch
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
 
     // Set x1 := 42
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[1], 42);
 
     // Set x2 := 100
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[2], 100);
 
     // CSRRW (x1 := 42) -> Write x1 to csr1
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.csr[&(csr1 as u32)], 42);
     assert_eq!(emulator_state.x[1], 0);
 
     // CSRRW (x2 := 100) -> Write x2 to csr2
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.csr[&(csr2 as u32)], 100);
     assert_eq!(emulator_state.x[2], 0);
 }
@@ -2021,9 +1989,7 @@ fn test_CSRRS() {
 
     let csr1 = 5;
 
-    populate(
-        &mut instruction_map,
-        &[
+    let mut program = populate(&[
             // set x1 := 42
             ISA::ADDI.build(Operands {
                 rd: 1,
@@ -2056,23 +2022,23 @@ fn test_CSRRS() {
     );
 
     // Instruction fetch
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
 
     // Set x1 := 42
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[1], 42);
 
     // Set x2 := 100
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[2], 100);
 
     // CSRRS x1, csr1, x1 -> Set csr1 := 0 | 42
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.csr[&(csr1 as u32)], 42);
     assert_eq!(emulator_state.x[1], 0);
 
     // CSRRS x1, csr1, x1 -> Set csr1 := 42 | 100
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.csr[&(csr1 as u32)], 42 | 100);
     assert_eq!(emulator_state.x[1], 42);
 }
@@ -2086,9 +2052,7 @@ fn test_CSRRC() {
 
     let csr1 = 5;
 
-    populate(
-        &mut instruction_map,
-        &[
+    let mut program = populate(&[
             // set x1 := 42
             ISA::ADDI.build(Operands {
                 rd: 1,
@@ -2121,23 +2085,23 @@ fn test_CSRRC() {
     );
 
     // Instruction fetch
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
 
     // Set x1 := 42
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[1], 42);
 
     // Set x2 := 100
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[2], 100);
 
     // CSRRC x1, csr1, x1 -> Set csr1 := 0 & ~42
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.csr[&(csr1 as u32)], 0);
     assert_eq!(emulator_state.x[1], 0);
 
     // CSRRC x1, csr1, x1 -> Set csr1 := 42 & ~100
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.csr[&(csr1 as u32)], 0);
     assert_eq!(emulator_state.x[1], 0);
 }
@@ -2151,9 +2115,7 @@ fn test_CSRRWI() {
 
     let csr1 = 5;
 
-    populate(
-        &mut instruction_map,
-        &[
+    let mut program = populate(&[
             // CSRRC x1, csr1, x1
             ISA::CSRRWI.build(Operands {
                 rd: 1,
@@ -2172,15 +2134,15 @@ fn test_CSRRWI() {
     );
 
     // Instruction fetch
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
 
     // CSRRC x1, csr1, 45 -> Set csr1 := 45
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.csr[&(csr1 as u32)], 25);
     assert_eq!(emulator_state.x[1], 0);
 
     // CSRRC x1, csr1, 2 -> Set csr1 := 2
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.csr[&(csr1 as u32)], 2);
     assert_eq!(emulator_state.x[1], 25);
 }
@@ -2194,9 +2156,7 @@ fn test_CSRRSI() {
 
     let csr1 = 5;
 
-    populate(
-        &mut instruction_map,
-        &[
+    let mut program = populate(&[
             // CSRRSI x1, csr1, x1
             ISA::CSRRSI.build(Operands {
                 rd: 1,
@@ -2215,15 +2175,15 @@ fn test_CSRRSI() {
     );
 
     // Instruction fetch
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
 
     // CSRRS x1, csr1, 45 -> Set csr1 := 0 | 25
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.csr[&(csr1 as u32)], 25);
     assert_eq!(emulator_state.x[1], 0);
 
     // CSRRS x1, csr1, 2 -> Set csr1 := 2 | 45
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.csr[&(csr1 as u32)], 2 | 25);
     assert_eq!(emulator_state.x[1], 25);
 }
@@ -2237,9 +2197,7 @@ fn test_CSRRCI() {
 
     let csr1 = 5;
 
-    populate(
-        &mut instruction_map,
-        &[
+    let mut program = populate(&[
             // CSRRCI x1, csr1, x1
             ISA::CSRRCI.build(Operands {
                 rd: 1,
@@ -2258,15 +2216,15 @@ fn test_CSRRCI() {
     );
 
     // Instruction fetch
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
 
     // CSRRS x1, csr1, 45 -> Set csr1 := 0 | !25
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.csr[&(csr1 as u32)], 0);
     assert_eq!(emulator_state.x[1], 0);
 
     // CSRRS x1, csr1, 2 -> Set csr1 := 0 & !2
-    emulator_state = clock(&emulator_state, &instruction_map, &mut data_map);
+    emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.csr[&(csr1 as u32)], 0);
     assert_eq!(emulator_state.x[1], 0);
 }

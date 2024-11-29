@@ -41,7 +41,7 @@ impl IndexMut<usize> for RegisterFile {
     }
 }
 
-#[derive(Copy, Clone, Default, Debug)]
+#[derive(Clone, Default, Debug)]
 pub struct EmulatorState {
     pub x: RegisterFile,
     pub csr: BTreeMap<u32, u32>,
@@ -49,7 +49,7 @@ pub struct EmulatorState {
 }
 
 pub fn clock(org_state: &EmulatorState, program: &mut AssembledProgram) -> EmulatorState {
-    let mut next_state = *org_state;
+    let mut next_state = org_state.clone();
 
     // Load the fetched instruction into the instr_rdata lines
     if next_state.pipeline.datapath.instr_req_o {
