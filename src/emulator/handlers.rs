@@ -194,8 +194,7 @@ fn BLT(instr: &Instruction, state: &mut EmulatorState) {
         let immed = (instr.immediate(InstructionFormat::B)).unwrap();
         let new_pc = state
             .pipeline
-            .datapath
-            .instr_addr_o
+            .ID_pc
             .checked_add_signed(immed)
             .unwrap();
 
@@ -221,8 +220,7 @@ fn BGE(instr: &Instruction, state: &mut EmulatorState) {
         let immed = (instr.immediate(InstructionFormat::B)).unwrap();
         let new_pc = state
             .pipeline
-            .datapath
-            .instr_addr_o
+            .ID_pc
             .checked_add_signed(immed)
             .unwrap();
 
@@ -248,8 +246,7 @@ fn BLTU(instr: &Instruction, state: &mut EmulatorState) {
         let immed = (instr.immediate(InstructionFormat::B)).unwrap();
         let new_pc = state
             .pipeline
-            .datapath
-            .instr_addr_o
+            .ID_pc
             .checked_add_signed(immed)
             .unwrap();
 
@@ -279,8 +276,7 @@ fn BGEU(instr: &Instruction, state: &mut EmulatorState) {
         let immed = (instr.immediate(InstructionFormat::B)).unwrap();
         let new_pc = state
             .pipeline
-            .datapath
-            .instr_addr_o
+            .ID_pc
             .checked_add_signed(immed)
             .unwrap();
 

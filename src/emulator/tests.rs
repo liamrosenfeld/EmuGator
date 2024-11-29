@@ -1,4 +1,6 @@
 #![allow(non_snake_case)]
+use dioxus::html::u;
+
 use crate::{emulator, isa::{Operands, ISA}};
 
 use super::*;
@@ -281,7 +283,7 @@ fn test_JALR_neg_offset() {
     emulator_state = clock(&emulator_state, &mut program);
 
     // After JALR, x1 should contain PC + 4, and the PC should jump to PC - 4 + 2
-    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    let pc = emulator_state.pipeline.ID_pc;
     emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[1], pc + 4);
     assert_eq!(
@@ -304,31 +306,53 @@ fn test_BEQ() {
         ISA::BEQ.build(Operands {
             rs1: 1,
             rs2: 2,
-            imm: 0x10,
+            imm: 0x8,
             ..Default::default()
         }), // BEQ (branch if x1 == x2)
         ISA::BEQ.build(Operands {
             rs1: 0,
             rs2: 2,
-            imm: 0x10,
+            imm: 0x8,
             ..Default::default()
         }), // BEQ (branch if x0 == x2)
+        ISA::ADDI.build(Operands {
+            rd: 5,
+            rs1: 0,
+            imm: 1,
+            ..Default::default()
+        }), // ADDI ( x5 := x0 + 1)
+        ISA::ADDI.build(Operands {
+            rd: 5,
+            rs1: 0,
+            imm: 2,
+            ..Default::default()
+        })
     ]);
 
     // Instruction fetch
     emulator_state = clock(&emulator_state, &mut program);
+
     // ADDI ( x1 := x0 + 1)
     emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[1], 1);
 
-    // Check whether the branch occurs (branch to PC + 0x4 if x1 == x2)
+    // BEQ (branch if x1 == x2) - should not branch because x1 != x2
     let pc = emulator_state.pipeline.ID_pc;
     emulator_state = clock(&emulator_state, &mut program);
-    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x4);
+    assert_eq!(emulator_state.pipeline.ID_pc, pc + 0x4);
 
-    // Check whether the branch occurs (branch to PC + 0x10 if x0 == x2)
+    // BEQ (branch if x0 == x2) - should branch because x0 == x2
     let pc = emulator_state.pipeline.ID_pc;
     emulator_state = clock(&emulator_state, &mut program);
-    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x10);
+    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x8);
+
+    // Instruction fetch
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[5], 0);
+
+    // ADDI ( x5 := x0 + 2)
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[5], 2);
 }
 
 #[test]
@@ -345,31 +369,52 @@ fn test_BNE() {
         ISA::BNE.build(Operands {
             rs1: 0,
             rs2: 2,
-            imm: 0x10,
+            imm: 0x8,
             ..Default::default()
         }), // BNE (branch if x0 != x2)
         ISA::BNE.build(Operands {
             rs1: 1,
             rs2: 2,
-            imm: 0x10,
+            imm: 0x8,
             ..Default::default()
         }), // BNE (branch if x1 != x2)
+        ISA::ADDI.build(Operands {
+            rd: 5,
+            rs1: 0,
+            imm: 1,
+            ..Default::default()
+        }), // ADDI ( x5 := x0 + 1)
+        ISA::ADDI.build(Operands {
+            rd: 5,
+            rs1: 0,
+            imm: 2,
+            ..Default::default()
+        })
     ]);
 
     // Instruction fetch
     emulator_state = clock(&emulator_state, &mut program);
+
     // ADDI ( x1 := x0 + 1)
     emulator_state = clock(&emulator_state, &mut program);
 
-    // Check that branch did not occur because x0 == x2
-    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    // BNE (branch if x0 != x2) - should not branch because x0 == x2
+    let pc = emulator_state.pipeline.ID_pc;
     emulator_state = clock(&emulator_state, &mut program);
-    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x4);
+    assert_eq!(emulator_state.pipeline.ID_pc, pc + 0x4);
 
-    // Check whether the branch occurs (branch to PC + 0x10 because x1 != x2)
-    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    // BNE (branch if x1 != x2) - should branch because x1 != x2
+    let pc = emulator_state.pipeline.ID_pc;
     emulator_state = clock(&emulator_state, &mut program);
-    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x10);
+    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x8);
+
+    // Instruction fetch
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[5], 0);
+
+    // ADDI ( x5 := x0 + 2)
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[5], 2);
 }
 
 #[test]
@@ -380,37 +425,59 @@ fn test_BLT() {
         ISA::ADDI.build(Operands {
             rd: 1,
             rs1: 0,
-            imm: 1,
+            imm: -1,
             ..Default::default()
-        }), // ADDI ( x1 := x0 + 1)
+        }), // ADDI ( x1 := x0 - 1)
         ISA::BLT.build(Operands {
             rs1: 0,
-            rs2: 2,
-            imm: 0x10,
-            ..Default::default()
-        }), // BLT (branch if x0 < x2)
-        ISA::BLT.build(Operands {
-            rs1: 2,
             rs2: 1,
-            imm: 0x10,
+            imm: 0x8,
             ..Default::default()
-        }), // BLT (branch if x2 < x1)
+        }), // BLT (branch if x0 < x1)
+        ISA::BLT.build(Operands {
+            rs1: 1,
+            rs2: 0,
+            imm: 0x8,
+            ..Default::default()
+        }), // BLT (branch if x1 < x0)
+        ISA::ADDI.build(Operands {
+            rd: 5,
+            rs1: 0,
+            imm: 1,
+            ..Default::default()
+        }), // ADDI ( x5 := x0 + 1)
+        ISA::ADDI.build(Operands {
+            rd: 5,
+            rs1: 0,
+            imm: 2,
+            ..Default::default()
+        }) // ADDI ( x5 := x0 + 2)
     ]);
 
     // Instruction fetch
     emulator_state = clock(&emulator_state, &mut program);
-    // ADDI ( x1 := x0 + 1)
-    emulator_state = clock(&emulator_state, &mut program);
 
-    // Check that branch did not occur because x0 >= x2
-    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    // ADDI ( x1 := x0 - 1)
     emulator_state = clock(&emulator_state, &mut program);
-    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x4);
+    assert_eq!(emulator_state.x[1], u32::MAX);
 
-    // Check whether the branch occurs (branch to PC + 0x10 because x2 < x1)
-    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    // BLT (branch if x0 < x1) - should not branch because x0 > x1
+    let pc = emulator_state.pipeline.ID_pc;
     emulator_state = clock(&emulator_state, &mut program);
-    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x10);
+    assert_eq!(emulator_state.pipeline.ID_pc, pc + 0x4);
+
+    // BLT (branch if x1 < x0) - should branch because x1 < x0
+    let pc = emulator_state.pipeline.ID_pc;
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x8);
+
+    // Instruction fetch
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[5], 0);
+
+    // ADDI ( x5 := x0 + 2)
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[5], 2);
 }
 
 #[test]
@@ -421,37 +488,78 @@ fn test_BGE() {
         ISA::ADDI.build(Operands {
             rd: 1,
             rs1: 0,
+            imm: -1,
+            ..Default::default()
+        }), // ADDI ( x1 := x0 - 1)
+        ISA::BGE.build(Operands {
+            rs1: 1,
+            rs2: 0,
+            imm: 0x8,
+            ..Default::default()
+        }), // BGE (branch if x1 >= x0)
+        ISA::BGE.build(Operands {
+            rs1: 0,
+            rs2: 1,
+            imm: 0x8,
+            ..Default::default()
+        }), // BGE (branch if x0 >= x1)
+        ISA::ADDI.build(Operands {
+            rd: 5,
+            rs1: 0,
             imm: 1,
             ..Default::default()
-        }), // ADDI ( x1 := x0 + 1)
-        ISA::BGE.build(Operands {
-            rs1: 2,
-            rs2: 1,
-            imm: 0x10,
+        }), // ADDI ( x5 := x0 + 1)
+        ISA::ADDI.build(Operands {
+            rd: 5,
+            rs1: 0,
+            imm: 2,
             ..Default::default()
-        }), // BGE (branch if x2 >= x1)
+        }), // ADDI ( x5 := x0 + 2)
         ISA::BGE.build(Operands {
             rs1: 0,
             rs2: 2,
-            imm: 0x10,
+            imm: -0x8,
             ..Default::default()
-        }), // BGE (branch if x0 >= x2)
+        }) // BGE (branch if x0 >= x2)
     ]);
 
     // Instruction fetch
     emulator_state = clock(&emulator_state, &mut program);
-    // ADDI ( x1 := x0 + 1)
-    emulator_state = clock(&emulator_state, &mut program);
 
-    // Check that branch did not occur because x2 < x1
-    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    // ADDI ( x1 := x0 - 1)
     emulator_state = clock(&emulator_state, &mut program);
-    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x4);
+    assert_eq!(emulator_state.x[1], u32::MAX);
 
-    // Check whether the branch occurs (branch to PC + 0x10 because x0 >= x2)
-    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    // BGE (branch if x1 >= x0) - should not branch because x0 > x1
+    let pc = emulator_state.pipeline.ID_pc;
     emulator_state = clock(&emulator_state, &mut program);
-    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x10);
+    assert_eq!(emulator_state.pipeline.ID_pc, pc + 0x4);
+
+    // BLT (branch if x0 >= x1) - should branch because x1 < x0
+    let pc = emulator_state.pipeline.ID_pc;
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x8);
+
+    // Instruction fetch
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[5], 0);
+
+    // ADDI ( x5 := x0 + 2)
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[5], 2);
+
+    // BGE (branch if x0 >= x2) - should branch because x0 == x2
+    let pc = emulator_state.pipeline.ID_pc;
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc - 0x8);
+
+    // Instruction fetch
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[5], 2);
+
+    // ADDI ( x5 := x0 + 1)
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[5], 1);
 }
 
 #[test]
@@ -462,37 +570,59 @@ fn test_BLTU() {
         ISA::ADDI.build(Operands {
             rd: 1,
             rs1: 0,
-            imm: 1,
+            imm: u32::MAX as i32,
             ..Default::default()
-        }), // ADDI ( x1 := x0 + 1)
+        }), // ADDI ( x1 := x0 - 1)
+        ISA::BLTU.build(Operands {
+            rs1: 1,
+            rs2: 0,
+            imm: 0x8,
+            ..Default::default()
+        }), // BLTU (branch if x1 < x0)
         ISA::BLTU.build(Operands {
             rs1: 0,
-            rs2: 2,
-            imm: 0x10,
-            ..Default::default()
-        }), // BLTU (branch if x0 < x2)
-        ISA::BLTU.build(Operands {
-            rs1: 2,
             rs2: 1,
-            imm: 0x10,
+            imm: 0x8,
             ..Default::default()
-        }), // BLTU (branch if x2 < x1)
+        }), // BLTU (branch if x0 < x1)
+        ISA::ADDI.build(Operands {
+            rd: 5,
+            rs1: 0,
+            imm: 1,
+            ..Default::default()
+        }), // ADDI ( x5 := x0 + 1)
+        ISA::ADDI.build(Operands {
+            rd: 5,
+            rs1: 0,
+            imm: 2,
+            ..Default::default()
+        }) // ADDI ( x5 := x0 + 2)
     ]);
 
     // Instruction fetch
     emulator_state = clock(&emulator_state, &mut program);
-    // ADDI ( x1 := x0 + 1)
-    emulator_state = clock(&emulator_state, &mut program);
 
-    // Check that branch did not occur because x0 >= x2
-    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    // ADDI ( x1 := x0 - 1)
     emulator_state = clock(&emulator_state, &mut program);
-    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x4);
+    assert_eq!(emulator_state.x[1], u32::MAX);
 
-    // Check whether the branch occurs (branch to PC + 0x10 because x2 < x1)
-    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    // BLTU (branch if x1 < x0) - should not branch because x1 > x0
+    let pc = emulator_state.pipeline.ID_pc;
     emulator_state = clock(&emulator_state, &mut program);
-    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x10);
+    assert_eq!(emulator_state.pipeline.ID_pc, pc + 0x4);
+
+    // BLTU (branch if x0 < x1) - should branch because x0 < x1
+    let pc = emulator_state.pipeline.ID_pc;
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x8);
+
+    // Instruction fetch
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[5], 0);
+
+    // ADDI ( x5 := x0 + 2)
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[5], 2);
 }
 
 #[test]
@@ -503,37 +633,78 @@ fn test_BGEU() {
         ISA::ADDI.build(Operands {
             rd: 1,
             rs1: 0,
+            imm: u32::MAX as i32,
+            ..Default::default()
+        }), // ADDI ( x1 := x0 - 1)
+        ISA::BGEU.build(Operands {
+            rs1: 0,
+            rs2: 1,
+            imm: 0x8,
+            ..Default::default()
+        }), // BGEU (branch if x0 >= x1)
+        ISA::BGEU.build(Operands {
+            rs1: 1,
+            rs2: 0,
+            imm: 0x8,
+            ..Default::default()
+        }), // BGEU (branch if x1 >= x0)
+        ISA::ADDI.build(Operands {
+            rd: 5,
+            rs1: 0,
             imm: 1,
             ..Default::default()
-        }), // ADDI ( x1 := x0 + 1)
-        ISA::BGEU.build(Operands {
-            rs1: 2,
-            rs2: 1,
-            imm: 0x10,
+        }), // ADDI ( x5 := x0 + 1)
+        ISA::ADDI.build(Operands {
+            rd: 5,
+            rs1: 0,
+            imm: 2,
             ..Default::default()
-        }), // BGEU (branch if x2 >= x1)
+        }), // ADDI ( x5 := x0 + 2)
         ISA::BGEU.build(Operands {
             rs1: 0,
             rs2: 2,
-            imm: 0x10,
+            imm: -0x8,
             ..Default::default()
-        }), // BGEU (branch if x0 >= x2)
+        }) // BGEU (branch if x0 >= x2)
     ]);
 
     // Instruction fetch
     emulator_state = clock(&emulator_state, &mut program);
-    // ADDI ( x1 := x0 + 1)
-    emulator_state = clock(&emulator_state, &mut program);
 
-    // Check that branch did not occur because x2 < x1
-    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    // ADDI ( x1 := x0 - 1)
     emulator_state = clock(&emulator_state, &mut program);
-    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x4);
+    assert_eq!(emulator_state.x[1], u32::MAX);
 
-    // Check whether the branch occurs (branch to PC + 0x10 because x0 >= x2)
-    let pc = emulator_state.pipeline.datapath.instr_addr_o;
+    // BGEU (branch if x0 >= x1) - should not branch because x0 < x1
+    let pc = emulator_state.pipeline.ID_pc;
     emulator_state = clock(&emulator_state, &mut program);
-    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x10);
+    assert_eq!(emulator_state.pipeline.ID_pc, pc + 0x4);
+
+    // BLT (branch if x1 >= x0) - should branch because x1 > x0
+    let pc = emulator_state.pipeline.ID_pc;
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc + 0x8);
+
+    // Instruction fetch
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[5], 0);
+
+    // ADDI ( x5 := x0 + 2)
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[5], 2);
+
+    // BGEU (branch if x0 >= x2) - should branch because x0 == x2
+    let pc = emulator_state.pipeline.ID_pc;
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.pipeline.datapath.instr_addr_o, pc - 0x8);
+
+    // Instruction fetch
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[5], 2);
+
+    // ADDI ( x5 := x0 + 1)
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[5], 1);
 }
 
 #[test]
