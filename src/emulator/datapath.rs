@@ -25,8 +25,9 @@ pub struct CVE2Datapath {
     pub data_gnt_i: bool,    // Input signal indicating the data request is granted.
     pub data_rvalid_i: bool, // Input signal indicating valid data is available.
     pub data_err_i: bool,    // Input signal indicating an error during the data memory operation.
-
+    
     // Core execution control signals
+    pub id_multicycle: u32, // Output signal indicating if the instruction is a multi-cycle instruction.
     pub fetch_enable_i: bool, // Input signal enabling instruction fetch.
     pub core_sleep_o: bool,   // Output signal indicating if the core is in sleep mode.
 
@@ -61,7 +62,7 @@ impl Default for CVE2Datapath {
             data_gnt_i: Default::default(),
             data_rvalid_i: Default::default(),
             data_err_i: Default::default(),
-            fetch_enable_i: Default::default(),
+            fetch_enable_i: true,
             core_sleep_o: Default::default(),
             irq_software_i: Default::default(),
             irq_timer_i: Default::default(),
@@ -69,6 +70,8 @@ impl Default for CVE2Datapath {
             irq_fast_i: Default::default(),
             irq_nm_i: Default::default(),
             debug_req_i: Default::default(),
+            id_multicycle: Default::default(),
+            
         }
     }
 }
@@ -76,7 +79,9 @@ impl Default for CVE2Datapath {
 #[derive(Copy, Clone, Default, Debug)]
 pub struct CVE2Pipeline {
     pub IF: u32, // Instruction Fetch Buffer
+    pub IF_pc: u32, // Program Counter for the IF stage
     pub ID: u32, // Instruction Decode Buffer
+    pub ID_pc: u32, // Program Counter for the ID stage
     pub datapath: CVE2Datapath,
 }
 

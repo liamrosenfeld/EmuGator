@@ -2,7 +2,7 @@
 
 use super::{EmulatorState, InstructionHandler};
 use crate::isa::{Instruction, InstructionFormat};
-use crate::{bits, bitmask};
+use crate::{bitmask, bits};
 
 pub fn get_handler(instr: Instruction) -> Result<InstructionHandler, ()> {
     match (instr.opcode(), instr.funct3(), instr.funct7()) {
@@ -73,183 +73,235 @@ fn AUIPC(instr: &Instruction, state: &mut EmulatorState) {
     let rd = instr.rd() as usize;
     let immediate = instr.immediate(InstructionFormat::U).unwrap() as i32;
 
-    let result = state.pipeline.datapath.instr_addr_o as i32 + immediate;
+    let result = state.pipeline.ID_pc as i32 + immediate;
 
     state.x[rd] = result as u32;
 }
 
 fn JAL(instr: &Instruction, state: &mut EmulatorState) {
     // TODO: Push onto Return Address stack when rd = x1/x5
-    let immed = (instr.immediate(InstructionFormat::J)).unwrap();
-    let new_pc = state
-        .pipeline
-        .datapath
-        .instr_addr_o
-        .checked_add_signed(immed)
-        .unwrap();
+    if state.pipeline.datapath.id_multicycle == 0 {
+        let immed = (instr.immediate(InstructionFormat::J)).unwrap();
+        let new_pc = state
+            .pipeline
+            .ID_pc
+            .checked_add_signed(immed)
+            .unwrap();
 
-    // if unaligned on 4-byte boundary
-    if new_pc & 0x00000003 != 0x00 {
-        panic!("JAL instruction immediate it not on a 4-byte boundary");
+        // if unaligned on 4-byte boundary
+        if new_pc & 0x00000003 != 0x00 {
+            panic!("JAL instruction immediate it not on a 4-byte boundary");
+        }
+        // stores pc+4 into rd
+        let rd = instr.rd() as usize;
+        state.x[rd] = state.pipeline.ID_pc + 4;
+
+        // update PC
+        state.pipeline.datapath.instr_addr_o = new_pc;
+        state.pipeline.datapath.fetch_enable_i = false;
+        state.pipeline.datapath.id_multicycle = 1;
+    } else {
+        state.pipeline.datapath.id_multicycle = 0;
+        state.pipeline.datapath.fetch_enable_i = true;
     }
-    // stores pc+4 into rd
-    let rd = instr.rd() as usize;
-    state.x[rd] = state.pipeline.datapath.instr_addr_o + 4;
-
-    // update PC
-    state.pipeline.datapath.instr_addr_o = new_pc;
 }
 
 fn JALR(instr: &Instruction, state: &mut EmulatorState) {
     // TODO: Push onto RAS
-    let immed = (instr.immediate(InstructionFormat::I)).unwrap();
-    let new_pc = (state
-        .pipeline
-        .datapath
-        .instr_addr_o
-        .checked_add_signed(immed)
-        .unwrap()
-        + state.x[instr.rs1() as usize])
-        & 0xFFFFFFFE;
+    if state.pipeline.datapath.id_multicycle == 0 {
+        let immed = (instr.immediate(InstructionFormat::I)).unwrap();
+        let new_pc = (state
+            .pipeline
+            .ID_pc
+            .checked_add_signed(immed)
+            .unwrap()
+            + state.x[instr.rs1() as usize])
+            & 0xFFFFFFFE;
 
-    // if unaligned on 4-byte boundary
-    if new_pc & 0x003 != 0x00 {
-        panic!("JALR target addess is not on a 4-byte boundary");
+        // if unaligned on 4-byte boundary
+        if new_pc & 0x003 != 0x00 {
+            panic!("JALR target addess is not on a 4-byte boundary");
+        }
+
+        // stores pc+4 into rd
+        let rd = instr.rd() as usize;
+        state.x[rd] = state.pipeline.ID_pc + 4;
+
+        // update PC
+        state.pipeline.datapath.instr_addr_o = new_pc;
+        state.pipeline.datapath.fetch_enable_i = false;
+        state.pipeline.datapath.id_multicycle = 1;
+    } else {
+        state.pipeline.datapath.id_multicycle = 0;
+        state.pipeline.datapath.fetch_enable_i = true;
     }
-
-    // stores pc+4 into rd
-    let rd = instr.rd() as usize;
-    state.x[rd] = state.pipeline.datapath.instr_addr_o + 4;
-
-    // update PC
-    state.pipeline.datapath.instr_addr_o = new_pc;
 }
 
 fn BEQ(instr: &Instruction, state: &mut EmulatorState) {
-    let immed = (instr.immediate(InstructionFormat::B)).unwrap();
-    let new_pc = state
-        .pipeline
-        .datapath
-        .instr_addr_o
-        .checked_add_signed(immed)
-        .unwrap();
+    if state.pipeline.datapath.id_multicycle == 0 {
+        let immed = (instr.immediate(InstructionFormat::B)).unwrap();
+        let new_pc = state
+            .pipeline
+            .ID_pc
+            .checked_add_signed(immed)
+            .unwrap();
 
-    // if unaligned on 4-byte boundary
-    if new_pc & 0x003 != 0x00{
-        panic!("BEQ instruction immediate it not on a 4-byte boundary");
-    }
+        // if unaligned on 4-byte boundary
+        if new_pc & 0x003 != 0x00 {
+            panic!("BEQ instruction immediate it not on a 4-byte boundary");
+        }
 
-    if state.x[instr.rs1() as usize] == state.x[instr.rs2() as usize] {
-        // update PC
-        state.pipeline.datapath.instr_addr_o = new_pc;
+        if state.x[instr.rs1() as usize] == state.x[instr.rs2() as usize] {
+            // update PC
+            state.pipeline.datapath.instr_addr_o = new_pc;
+            state.pipeline.datapath.fetch_enable_i = false;
+            state.pipeline.datapath.id_multicycle = 1;
+        }
+    } else {
+        state.pipeline.datapath.id_multicycle = 0;
+        state.pipeline.datapath.fetch_enable_i = true;
     }
 }
 
 fn BNE(instr: &Instruction, state: &mut EmulatorState) {
-    let immed = (instr.immediate(InstructionFormat::B)).unwrap();
-    let new_pc = state
-        .pipeline
-        .datapath
-        .instr_addr_o
-        .checked_add_signed(immed)
-        .unwrap();
+    if state.pipeline.datapath.id_multicycle == 0 {
+        let immed = (instr.immediate(InstructionFormat::B)).unwrap();
+        let new_pc = state
+            .pipeline
+            .ID_pc
+            .checked_add_signed(immed)
+            .unwrap();
 
-    // if unaligned on 4-byte boundary
-    if new_pc & 0x003 != 0x00 {
-        panic!("BNE instruction immediate it not on a 4-byte boundary");
-    }
+        // if unaligned on 4-byte boundary
+        if new_pc & 0x003 != 0x00 {
+            panic!("BNE instruction immediate it not on a 4-byte boundary");
+        }
 
-    if state.x[instr.rs1() as usize] != state.x[instr.rs2() as usize] {
-        // update PC
-        state.pipeline.datapath.instr_addr_o = new_pc;
+        if state.x[instr.rs1() as usize] != state.x[instr.rs2() as usize] {
+            // update PC
+            state.pipeline.datapath.instr_addr_o = new_pc;
+            state.pipeline.datapath.fetch_enable_i = false;
+            state.pipeline.datapath.id_multicycle = 1;
+        }
+    } else {
+        state.pipeline.datapath.id_multicycle = 0;
+        state.pipeline.datapath.fetch_enable_i = true;
     }
 }
 
 fn BLT(instr: &Instruction, state: &mut EmulatorState) {
-    let immed = (instr.immediate(InstructionFormat::B)).unwrap();
-    let new_pc = state
-        .pipeline
-        .datapath
-        .instr_addr_o
-        .checked_add_signed(immed)
-        .unwrap();
+    if state.pipeline.datapath.id_multicycle == 0 {
+        let immed = (instr.immediate(InstructionFormat::B)).unwrap();
+        let new_pc = state
+            .pipeline
+            .datapath
+            .instr_addr_o
+            .checked_add_signed(immed)
+            .unwrap();
 
-    // if unaligned on 4-byte boundary
-    if new_pc & 0x003 != 0x00 {
-        panic!("BLT instruction immediate it not on a 4-byte boundary");
-    }
+        // if unaligned on 4-byte boundary
+        if new_pc & 0x003 != 0x00 {
+            panic!("BLT instruction immediate it not on a 4-byte boundary");
+        }
 
-    if (state.x[instr.rs1() as usize] as i32) < state.x[instr.rs2() as usize] as i32 {
-        // update PC
-        state.pipeline.datapath.instr_addr_o = new_pc;
+        if (state.x[instr.rs1() as usize] as i32) < state.x[instr.rs2() as usize] as i32 {
+            // update PC
+            state.pipeline.datapath.instr_addr_o = new_pc;
+            state.pipeline.datapath.fetch_enable_i = false;
+            state.pipeline.datapath.id_multicycle = 1;
+        }
+    } else {
+        state.pipeline.datapath.id_multicycle = 0;
+        state.pipeline.datapath.fetch_enable_i = true;
     }
 }
 
 fn BGE(instr: &Instruction, state: &mut EmulatorState) {
-    let immed = (instr.immediate(InstructionFormat::B)).unwrap();
-    let new_pc = state
-        .pipeline
-        .datapath
-        .instr_addr_o
-        .checked_add_signed(immed)
-        .unwrap();
+    if state.pipeline.datapath.id_multicycle == 0 {
+        let immed = (instr.immediate(InstructionFormat::B)).unwrap();
+        let new_pc = state
+            .pipeline
+            .datapath
+            .instr_addr_o
+            .checked_add_signed(immed)
+            .unwrap();
 
-    // if unaligned on 4-byte boundary
-    if new_pc & 0x003 != 0x00 {
-        panic!("BGE instruction immediate it not on a 4-byte boundary");
-    }
+        // if unaligned on 4-byte boundary
+        if new_pc & 0x003 != 0x00 {
+            panic!("BGE instruction immediate it not on a 4-byte boundary");
+        }
 
-    if (state.x[instr.rs1() as usize] as i32) >= state.x[instr.rs2() as usize] as i32 {
-        // update PC
-        state.pipeline.datapath.instr_addr_o = new_pc;
+        if (state.x[instr.rs1() as usize] as i32) >= state.x[instr.rs2() as usize] as i32 {
+            // update PC
+            state.pipeline.datapath.instr_addr_o = new_pc;
+            state.pipeline.datapath.fetch_enable_i = false;
+            state.pipeline.datapath.id_multicycle = 1;
+        }
+    } else {
+        state.pipeline.datapath.id_multicycle = 0;
+        state.pipeline.datapath.fetch_enable_i = true;
     }
 }
 
 fn BLTU(instr: &Instruction, state: &mut EmulatorState) {
-    let immed = (instr.immediate(InstructionFormat::B)).unwrap();
-    let new_pc = state
-        .pipeline
-        .datapath
-        .instr_addr_o
-        .checked_add_signed(immed)
-        .unwrap();
+    if state.pipeline.datapath.id_multicycle == 0 {
+        let immed = (instr.immediate(InstructionFormat::B)).unwrap();
+        let new_pc = state
+            .pipeline
+            .datapath
+            .instr_addr_o
+            .checked_add_signed(immed)
+            .unwrap();
 
-    // if unaligned on 4-byte boundary
-    if new_pc & 0x003 != 0x00 {
-        panic!("BLTU instruction immediate it not on a 4-byte boundary");
-    }
+        // if unaligned on 4-byte boundary
+        if new_pc & 0x003 != 0x00 {
+            panic!("BLTU instruction immediate it not on a 4-byte boundary");
+        }
 
-    if state.x[instr.rs1() as usize] < state.x[instr.rs2() as usize] {
-        // stores pc+4 into rd
-        let rd = instr.rd() as usize;
-        state.x[rd] = state.pipeline.datapath.instr_addr_o + 4;
+        if state.x[instr.rs1() as usize] < state.x[instr.rs2() as usize] {
+            // stores pc+4 into rd
+            let rd = instr.rd() as usize;
+            state.x[rd] = state.pipeline.datapath.instr_addr_o + 4;
 
-        // update PC
-        state.pipeline.datapath.instr_addr_o = new_pc;
+            // update PC
+            state.pipeline.datapath.instr_addr_o = new_pc;
+            state.pipeline.datapath.fetch_enable_i = false;
+            state.pipeline.datapath.id_multicycle = 1;
+        }
+    } else {
+        state.pipeline.datapath.id_multicycle = 0;
+        state.pipeline.datapath.fetch_enable_i = true;
     }
 }
 
 fn BGEU(instr: &Instruction, state: &mut EmulatorState) {
-    let immed = (instr.immediate(InstructionFormat::B)).unwrap();
-    let new_pc = state
-        .pipeline
-        .datapath
-        .instr_addr_o
-        .checked_add_signed(immed)
-        .unwrap();
+    if state.pipeline.datapath.id_multicycle == 0 {
+        let immed = (instr.immediate(InstructionFormat::B)).unwrap();
+        let new_pc = state
+            .pipeline
+            .datapath
+            .instr_addr_o
+            .checked_add_signed(immed)
+            .unwrap();
 
-    // if unaligned on 4-byte boundary
-    if new_pc & 0x003 != 0x00 {
-        panic!("BGEU instruction immediate it not on a 4-byte boundary");
-    }
+        // if unaligned on 4-byte boundary
+        if new_pc & 0x003 != 0x00 {
+            panic!("BGEU instruction immediate it not on a 4-byte boundary");
+        }
 
-    if state.x[instr.rs1() as usize] >= state.x[instr.rs2() as usize] {
-        // stores pc+4 into rd
-        let rd = instr.rd() as usize;
-        state.x[rd] = state.pipeline.datapath.instr_addr_o + 4;
+        if state.x[instr.rs1() as usize] >= state.x[instr.rs2() as usize] {
+            // stores pc+4 into rd
+            let rd = instr.rd() as usize;
+            state.x[rd] = state.pipeline.datapath.instr_addr_o + 4;
 
-        // update PC
-        state.pipeline.datapath.instr_addr_o = new_pc;
+            // update PC
+            state.pipeline.datapath.instr_addr_o = new_pc;
+            state.pipeline.datapath.fetch_enable_i = false;
+            state.pipeline.datapath.id_multicycle = 1;
+        }
+    } else {
+        state.pipeline.datapath.id_multicycle = 0;
+        state.pipeline.datapath.fetch_enable_i = true;
     }
 }
 
@@ -379,7 +431,8 @@ fn SRxI(instr: &Instruction, state: &mut EmulatorState) {
 
     // TODO: ask christo if I can ignore the 0x1F
     let shamt = immediate & 0x1F;
-    state.x[rd] = state.x[rs] >> (immediate & 0x1F) | (bitmask!(31;32-shamt) * bits!(state.x[rs], 31) * bits!(instr.raw(), 30));
+    state.x[rd] = state.x[rs] >> (immediate & 0x1F)
+        | (bitmask!(31;32-shamt) * bits!(state.x[rs], 31) * bits!(instr.raw(), 30));
 }
 
 fn ADD(instr: &Instruction, state: &mut EmulatorState) {

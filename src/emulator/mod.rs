@@ -77,6 +77,7 @@ pub fn clock(org_state: &EmulatorState, program: &mut AssembledProgram) -> Emula
 
             // Store the fetched instruction
             next_state.pipeline.IF = next_state.pipeline.datapath.instr_rdata_i;
+            next_state.pipeline.IF_pc = next_state.pipeline.datapath.instr_addr_o;
             // Move the program counter
             next_state.pipeline.datapath.instr_addr_o += 4;
         } else {
@@ -131,6 +132,10 @@ pub fn clock(org_state: &EmulatorState, program: &mut AssembledProgram) -> Emula
         }
     }
 
-    next_state.pipeline.ID = next_state.pipeline.IF;
+    // Only load the next instruction if the fetch is enabled
+    if next_state.pipeline.datapath.fetch_enable_i {
+        next_state.pipeline.ID = next_state.pipeline.IF;
+        next_state.pipeline.ID_pc = next_state.pipeline.IF_pc;
+    }
     return next_state;
 }
