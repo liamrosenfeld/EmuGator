@@ -51,7 +51,7 @@ export const makeTokensProvider = () => {
     escapes: /\\(?:[abfnrtv\\"'$]|x[0-9A-Fa-f]{1,4}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})/,
     tokenizer: {
       root: [
-        [/x(?:[0-9]|[1-2][0-9]|3[0-1])|pc|zero/, "variable.predefined"],
+        [/x(?:[1-2][0-9]|3[0-1]|[0-9])|pc|zero/, "variable.predefined"],
         [
           /[.a-zA-Z_]\w*/,
           {
