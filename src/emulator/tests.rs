@@ -34,12 +34,12 @@ fn test_LUI() {
     let mut program = populate(&[
         ISA::LUI.build(Operands {
             rd: 1,
-            imm: 0x12345,
+            imm: 0x12345000,
             ..Default::default()
         }),
         ISA::LUI.build(Operands {
             rd: 0,
-            imm: 0x12345,
+            imm: 0x12345000,
             ..Default::default()
         }),
     ]);
@@ -61,7 +61,7 @@ fn test_AUIPC() {
     // AUIPC ( x1 := PC + 0x12345000)
     let mut program = populate(&[ISA::AUIPC.build(Operands {
         rd: 1,
-        imm: 0x12345,
+        imm: 0x12345000,
         ..Default::default()
     })]);
 
@@ -1861,7 +1861,7 @@ fn test_SW() {
     emulator_state = clock(&emulator_state, &mut program);
 
     // Set x1 := 0x12345678
-    for i in 0..8 {
+    for _ in 0..8 {
         emulator_state = clock(&emulator_state, &mut program);
     }
     assert_eq!(emulator_state.x[1], 0x12345678);

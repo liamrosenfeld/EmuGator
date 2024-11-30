@@ -86,9 +86,9 @@ impl Instruction {
     }
 
     fn encode_u(opcode: u32, rd: u32, imm: i32) -> u32 {
-        assert_eq!(imm, bits!(imm,19;0));
+        assert_eq!(imm, bits!(imm,31;12) << 12);
         let imm: u32 = imm as u32;
-        (bits!(imm,19;0) << 12 | rd << 7 | opcode << 0)
+        (bits!(imm,31;12) << 12 | rd << 7 | opcode << 0)
     }
 
     fn encode_j(opcode: u32, rd: u32, imm: i32) -> u32 {

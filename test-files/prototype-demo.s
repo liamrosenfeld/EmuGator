@@ -12,7 +12,7 @@ main:
     SLLI x9, x2, 2      #   x9 = x2 << 2
 
     # U-type instruction example
-    LUI x4, 0xFFF       # (load upper immediate) x4 = 0xFFF << 20
+    LUI x4, 0xFFF       # (load upper immediate) x4 = 0xFFF << 12
 
     # R-type instruction example
     SUB x8, x3, x2      # x8 = x3 - x2
