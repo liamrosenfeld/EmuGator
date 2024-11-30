@@ -1,5 +1,6 @@
 use dioxus::prelude::*;
 use crate::assembler::AssembledProgram;
+use crate::emulator::EmulatorState;
 use super::instruction_views::InstructionView;
 use super::data_views::DataView;
 
@@ -11,7 +12,10 @@ pub enum MemoryViewType {
 
 #[component]
 #[allow(non_snake_case)]
-pub fn MemoryView(assembled_program: Signal<Option<AssembledProgram>>) -> Element {
+pub fn MemoryView(
+    assembled_program: Signal<Option<AssembledProgram>>,
+    emulator_state: Signal<EmulatorState>
+) -> Element {
     let mut view_type = use_signal(|| MemoryViewType::Instruction);
 
     rsx! {
@@ -37,7 +41,8 @@ pub fn MemoryView(assembled_program: Signal<Option<AssembledProgram>>) -> Elemen
                 match *view_type.read() {
                     MemoryViewType::Instruction => rsx! {
                         InstructionView {
-                            assembled_program: assembled_program
+                            assembled_program: assembled_program,
+                            emulator_state: emulator_state
                         }
                     },
                     MemoryViewType::Data => rsx! {
