@@ -327,6 +327,7 @@ fn SB(instr: &Instruction, state: &mut EmulatorState) {
         state.x[instr.rs1() as usize] as i32 + instr.immediate(InstructionFormat::S).unwrap();
 
     // set data on pipline
+    state.pipeline.datapath.data_req_o = true;
     state.pipeline.datapath.data_addr_o = addr as u32;
     state.pipeline.datapath.data_we_o = true;
     state.pipeline.datapath.data_be_o = 0x1; // access LSB only
@@ -339,6 +340,7 @@ fn SH(instr: &Instruction, state: &mut EmulatorState) {
         state.x[instr.rs1() as usize] as i32 + instr.immediate(InstructionFormat::S).unwrap();
 
     // set data on pipline
+    state.pipeline.datapath.data_req_o = true;
     state.pipeline.datapath.data_addr_o = addr as u32;
     state.pipeline.datapath.data_we_o = true;
     state.pipeline.datapath.data_be_o = 0x7; // access all 4 bytes
@@ -346,14 +348,15 @@ fn SH(instr: &Instruction, state: &mut EmulatorState) {
 }
 
 fn SW(instr: &Instruction, state: &mut EmulatorState) {
-    let data = state.x[instr.rs2() as usize] & 0xFFFF;
+    let data = state.x[instr.rs2() as usize];
     let addr =
         state.x[instr.rs1() as usize] as i32 + instr.immediate(InstructionFormat::S).unwrap();
 
     // set data on pipline
+    state.pipeline.datapath.data_req_o = true;
     state.pipeline.datapath.data_addr_o = addr as u32;
     state.pipeline.datapath.data_we_o = true;
-    state.pipeline.datapath.data_be_o = 0x3; // access last two bytes
+    state.pipeline.datapath.data_be_o = 0xF; // access all 4 bytes
     state.pipeline.datapath.data_wdata_o = data;
 }
 
@@ -416,7 +419,6 @@ fn SLLI(instr: &Instruction, state: &mut EmulatorState) {
     let rs = instr.rs1() as usize;
     let immediate = instr.immediate(InstructionFormat::I).unwrap() as u32;
 
-    // TODO: ask christo if I can ignore the 0x1F
     state.x[rd] = state.x[rs] << (immediate & 0x1F);
 }
 
@@ -436,7 +438,7 @@ fn ADD(instr: &Instruction, state: &mut EmulatorState) {
     let rs1 = instr.rs1() as usize;
     let rs2 = instr.rs2() as usize;
 
-    state.x[rd] = state.x[rs1] + state.x[rs2];
+    state.x[rd] = (state.x[rs1] as i32 + state.x[rs2] as i32) as u32;
 }
 
 fn SUB(instr: &Instruction, state: &mut EmulatorState) {
@@ -444,7 +446,7 @@ fn SUB(instr: &Instruction, state: &mut EmulatorState) {
     let rs1 = instr.rs1() as usize;
     let rs2 = instr.rs2() as usize;
 
-    state.x[rd] = state.x[rs1] - state.x[rs2];
+    state.x[rd] = (state.x[rs1] as i32 - state.x[rs2] as i32) as u32;
 }
 
 fn SLL(instr: &Instruction, state: &mut EmulatorState) {
@@ -452,7 +454,7 @@ fn SLL(instr: &Instruction, state: &mut EmulatorState) {
     let rs1 = instr.rs1() as usize;
     let rs2 = instr.rs2() as usize;
 
-    state.x[rd] = state.x[rs1] << state.x[rs2];
+    state.x[rd] = state.x[rs1] << (state.x[rs2] & 0x1F);
 }
 
 fn SLT(instr: &Instruction, state: &mut EmulatorState) {
@@ -488,7 +490,6 @@ fn SRL(instr: &Instruction, state: &mut EmulatorState) {
     let rs1 = instr.rs1() as usize;
     let rs2 = instr.rs2() as usize;
 
-    // TODO: ask christo if I can ignore the 0x1F
     state.x[rd] = state.x[rs1] >> (state.x[rs2] & 0x1F);
 }
 
@@ -497,7 +498,7 @@ fn SRA(instr: &Instruction, state: &mut EmulatorState) {
     let rs1 = instr.rs1() as usize;
     let rs2 = instr.rs2() as usize;
 
-    state.x[rd] = state.x[rs1] >> state.x[rs2];
+    state.x[rd] = (state.x[rs1] as i32 >> (state.x[rs2] & 0x1F)) as u32;
 }
 
 fn OR(instr: &Instruction, state: &mut EmulatorState) {
@@ -513,7 +514,7 @@ fn AND(instr: &Instruction, state: &mut EmulatorState) {
     let rs1 = instr.rs1() as usize;
     let rs2 = instr.rs2() as usize;
 
-    state.x[rd] = state.x[rs1] | state.x[rs2];
+    state.x[rd] = state.x[rs1] & state.x[rs2];
 }
 
 fn FENCE(instr: &Instruction, state: &mut EmulatorState) {
@@ -537,25 +538,95 @@ fn EBREAK(instr: &Instruction, state: &mut EmulatorState) {
 }
 
 fn CSRRW(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+    let csr = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let rd = instr.rd() as usize;
+    let rs1 = instr.rs1() as usize;
+
+    if rd == 0 {
+        return;
+    }
+
+    let tmp = if state.csr.contains_key(&csr) {
+        state.csr[&csr]
+    } else {
+        0
+    };
+
+    state.csr.insert(csr, state.x[rs1]);
+    state.x[rd] = tmp;
 }
 
 fn CSRRS(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+    let csr = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let rd = instr.rd() as usize;
+    let rs1 = instr.rs1() as usize;
+
+    let tmp = if state.csr.contains_key(&csr) {
+        state.csr[&csr]
+    } else {
+        0
+    };
+
+    state.csr.insert(csr, state.x[rs1] | tmp);
+    state.x[rd] = tmp;
 }
 
 fn CSRRC(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+    let csr = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let rd = instr.rd() as usize;
+    let rs1 = instr.rs1() as usize;
+
+    let tmp = if state.csr.contains_key(&csr) {
+        state.csr[&csr]
+    } else {
+        0
+    };
+
+    state.csr.insert(csr, tmp & !state.x[rs1]);
+    state.x[rd] = tmp;
 }
 
 fn CSRRWI(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+    let csr = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let rd = instr.rd() as usize;
+    let zimm = instr.rs1() as u32;
+
+    let tmp = if state.csr.contains_key(&csr) {
+        state.csr[&csr]
+    } else {
+        0
+    };
+
+    state.csr.insert(csr, zimm);
+    state.x[rd] = tmp;
 }
 
 fn CSRRSI(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+    let csr = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let rd = instr.rd() as usize;
+    let zimm = instr.rs1() as u32;
+
+    let tmp = if state.csr.contains_key(&csr) {
+        state.csr[&csr]
+    } else {
+        0
+    };
+
+    state.csr.insert(csr, tmp | zimm);
+    state.x[rd] = tmp;
 }
 
 fn CSRRCI(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+    let csr = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let rd = instr.rd() as usize;
+    let zimm = instr.rs1() as u32;
+
+    let tmp = if state.csr.contains_key(&csr) {
+        state.csr[&csr]
+    } else {
+        0
+    };
+
+    state.csr.insert(csr, tmp & !zimm);
+    state.x[rd] = tmp;
 }
