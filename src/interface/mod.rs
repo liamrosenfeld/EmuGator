@@ -19,7 +19,7 @@ use crate::{
 #[component]
 #[allow(non_snake_case)]
 pub fn App() -> Element {
-    let source = use_signal(|| include_test_file!("syntax-check.s").to_string());
+    let source = use_signal(|| include_test_file!("prototype-demo.s").to_string());
     let mut assembled_program: Signal<Option<AssembledProgram>> = use_signal(|| None);
     let mut emulator_state: Signal<EmulatorState> = use_signal(|| EmulatorState::default());
 

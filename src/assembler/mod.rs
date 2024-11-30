@@ -439,17 +439,11 @@ fn parse_u_type(parts: &[&str], def: InstructionDefinition) -> Result<Instructio
     }
 
     let imm = parse_immediate(parts[2])?;
-
-    // For LUI/AUIPC, we want to allow full 20-bit immediate values
-    let imm_value = if imm < 0 {
-        (((-imm) as u32) & 0xFFFFF) | 0xFFF00000
-    } else {
-        (imm as u32) & 0xFFFFF
-    };
+    let imm_value = ((imm as u32) & 0xFFFFF) << 12;
 
     let operands = Operands {
         rd: parse_register(parts[1])?,
-        imm: (imm_value as i32) >> 12,
+        imm: imm_value as i32,
         ..Default::default()
     };
     Ok(Instruction::from_def_operands(def, operands))
