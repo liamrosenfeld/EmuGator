@@ -38,7 +38,6 @@ macro_rules! include_test_file {
     };
 }
 
-
 #[test]
 fn test_bits() {
     let ten = 0b1010;
@@ -52,7 +51,6 @@ fn test_bits() {
     assert_eq!(bits!(ten, 1, 3), 0b101);
     assert_eq!(bits!(ten, 3;1), 0b101);
 }
-
 
 #[test]
 fn test_bitmask() {

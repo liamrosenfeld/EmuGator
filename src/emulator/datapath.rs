@@ -21,8 +21,8 @@ pub struct CVE2Datapath {
     pub data_wdata_o: u32,   // Output data to be written to memory.
     pub data_rdata_i: u32,   // Input data read from memory.
     pub data_we_o: bool,     // Output write-enable signal for data memory.
-    pub data_be_o: u8,       // Output byte-enable (4-bit) for selective byte access in 32-bit words.
-    pub data_gnt_i: bool,    // Input signal indicating the data request is granted.
+    pub data_be_o: u8, // Output byte-enable (4-bit) for selective byte access in 32-bit words.
+    pub data_gnt_i: bool, // Input signal indicating the data request is granted.
     pub data_rvalid_i: bool, // Input signal indicating valid data is available.
     pub data_err_i: bool,    // Input signal indicating an error during the data memory operation.
     
@@ -85,5 +85,4 @@ pub struct CVE2Pipeline {
     pub datapath: CVE2Datapath,
 }
 
-impl CVE2Pipeline {
-}
+impl CVE2Pipeline {}

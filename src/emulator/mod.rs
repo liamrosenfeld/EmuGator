@@ -41,14 +41,15 @@ impl IndexMut<usize> for RegisterFile {
     }
 }
 
-#[derive(Copy, Clone, Default, Debug)]
+#[derive(Clone, Default, Debug)]
 pub struct EmulatorState {
     pub x: RegisterFile,
+    pub csr: BTreeMap<u32, u32>,
     pub pipeline: CVE2Pipeline,
 }
 
 pub fn clock(org_state: &EmulatorState, program: &mut AssembledProgram) -> EmulatorState {
-    let mut next_state = *org_state;
+    let mut next_state = org_state.clone();
 
     // Load the fetched instruction into the instr_rdata lines
     if next_state.pipeline.datapath.instr_req_o {
@@ -105,8 +106,7 @@ pub fn clock(org_state: &EmulatorState, program: &mut AssembledProgram) -> Emula
         let mut data_bytes: [u8; 4] = [0; 4];
         let success = (0usize..4usize).all(|i| {
             let addr = data_addr + i as u32;
-            let valid = program.instruction_memory.contains_key(&addr);
-
+            let valid = program.data_memory.contains_key(&addr);
             if valid {
                 // Read byte
                 data_bytes[i] = program.data_memory[&addr];
