@@ -11,7 +11,7 @@ pub fn RegisterView(emulator_state: Signal<EmulatorState>) -> Element {
         "t3", "t4", "t5", "t6",
     ];
     let register_vals = &emulator_state.read().x.x;
-    let pc = emulator_state.read().pipeline.datapath.instr_addr_o;
+    let pc = emulator_state.read().pipeline.ID_pc;
     rsx! {
         div { 
             class: "flex flex-col h-full",
@@ -19,7 +19,7 @@ pub fn RegisterView(emulator_state: Signal<EmulatorState>) -> Element {
                 class: "flex justify-between items-center mb-2",
                 h1 { class: "text-lg font-mono font-bold text-gray-900", "Registers" }
                 div { class: "bg-white rounded px-3 py-1 shadow-sm",
-                    span { class: "font-mono font-bold text-gray-700", "PC: " }
+                    span { class: "font-mono font-bold text-gray-700", "PC (ID): " }
                     span { class: "font-mono text-blue-600", "{pc:#010x}" }
                 }
             }
