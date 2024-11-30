@@ -1,7 +1,6 @@
 #![allow(non_snake_case)]
-use dioxus::html::u;
 
-use crate::{emulator, isa::{Operands, ISA}};
+use crate::{isa::{Operands, ISA}};
 
 use super::*;
 
@@ -35,12 +34,12 @@ fn test_LUI() {
     let mut program = populate(&[
         ISA::LUI.build(Operands {
             rd: 1,
-            imm: 0x12345000,
+            imm: 0x12345,
             ..Default::default()
         }),
         ISA::LUI.build(Operands {
             rd: 0,
-            imm: 0x12345000,
+            imm: 0x12345,
             ..Default::default()
         }),
     ]);
@@ -62,7 +61,7 @@ fn test_AUIPC() {
     // AUIPC ( x1 := PC + 0x12345000)
     let mut program = populate(&[ISA::AUIPC.build(Operands {
         rd: 1,
-        imm: 0x12345000,
+        imm: 0x12345,
         ..Default::default()
     })]);
 
@@ -191,7 +190,7 @@ fn test_JAL_panic() {
     emulator_state = clock(&emulator_state, &mut program);
 
     // Should panic because the immediate is not on a 4-byte boundary
-    emulator_state = clock(&emulator_state, &mut program);
+    clock(&emulator_state, &mut program);
 }
 
 #[test]
@@ -1711,7 +1710,7 @@ fn test_SB() {
     assert_eq!(program.data_memory.get(&100), Some(&10)); // x1 = 10 (100 + x2)
 
     // SB (x2 := 100) -> Write x2 to address 105 + x0
-    emulator_state = clock(&emulator_state, &mut program);
+    clock(&emulator_state, &mut program);
     assert_eq!(program.data_memory.get(&105), Some(&100));
 }
 
@@ -1780,7 +1779,7 @@ fn test_SH() {
     emulator_state = clock(&emulator_state, &mut program);
 
     // SH (x1 := 0xAF0C) -> Write x1 to address 100 + x2
-    emulator_state = clock(&emulator_state, &mut program);
+    clock(&emulator_state, &mut program);
     assert_eq!(program.data_memory.get(&100), Some(&0xC));
     assert_eq!(program.data_memory.get(&101), Some(&0xAF));
     assert_eq!(program.data_memory.get(&102), Some(&0));
@@ -1871,7 +1870,7 @@ fn test_SW() {
     emulator_state = clock(&emulator_state, &mut program);
 
     // SW (x1 := 0x12345678) -> Write x1 to address 100 + x2
-    emulator_state = clock(&emulator_state, &mut program);
+    clock(&emulator_state, &mut program);
     assert_eq!(program.data_memory.get(&100), Some(&0x78));
     assert_eq!(program.data_memory.get(&101), Some(&0x56));
     assert_eq!(program.data_memory.get(&102), Some(&0x34));

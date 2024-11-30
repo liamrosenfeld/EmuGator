@@ -6,7 +6,7 @@ mod tests;
 
 use crate::assembler::AssembledProgram;
 use crate::isa::Instruction;
-use crate::{bitmask, bits};
+use crate::bits;
 use std::{
     collections::BTreeMap,
     ops::{Index, IndexMut},

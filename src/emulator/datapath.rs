@@ -76,6 +76,7 @@ impl Default for CVE2Datapath {
     }
 }
 
+#[allow(non_snake_case)]
 #[derive(Copy, Clone, Default, Debug)]
 pub struct CVE2Pipeline {
     pub IF: u32, // Instruction Fetch Buffer

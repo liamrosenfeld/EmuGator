@@ -66,7 +66,7 @@ fn LUI(instr: &Instruction, state: &mut EmulatorState) {
     let rd = instr.rd() as usize;
     let immediate = instr.immediate(InstructionFormat::U).unwrap() as i32;
 
-    state.x[rd] = (immediate as u32);
+    state.x[rd] = immediate as u32;
 }
 
 fn AUIPC(instr: &Instruction, state: &mut EmulatorState) {
