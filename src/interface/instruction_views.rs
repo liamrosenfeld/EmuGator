@@ -22,7 +22,7 @@ pub fn InstructionView(
     let program = program.as_ref().unwrap();
     let instruction_memory = &program.instruction_memory;
     let text_start = program.get_section_start(Section::Text) as usize;
-    let current_pc = emulator_state.read().pipeline.datapath.instr_addr_o as usize;
+    let current_pc = emulator_state.read().pipeline.ID_pc as usize;
     
     let total_instructions = instruction_memory.len() / 4; // Since each instruction is 4 bytes
 
