@@ -1027,9 +1027,6 @@ fn test_SLLI() {
 fn test_SRLI() {
     let mut emulator_state = EmulatorState::default();
 
-    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
-
     let mut program = populate(&[
             ISA::ADDI.build(Operands {
                 rd: 1,
@@ -1082,9 +1079,6 @@ fn test_SRLI() {
 fn test_SRAI() {
     let mut emulator_state = EmulatorState::default();
 
-    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
-
     let mut program = populate(&[
             ISA::ADDI.build(Operands {
                 rd: 1,
@@ -1136,9 +1130,6 @@ fn test_SRAI() {
 #[test]
 fn test_ADD() {
     let mut emulator_state = EmulatorState::default();
-
-    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
     let mut program = populate(&[
             // ADDI x1, x0, 15 -> Set x1 := 15
@@ -1206,9 +1197,6 @@ fn test_ADD() {
 #[test]
 fn test_SUB() {
     let mut emulator_state = EmulatorState::default();
-
-    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
     let mut program = populate(&[
             // ADDI x1, x0, 20 -> Set x1 := 20
@@ -1287,9 +1275,6 @@ fn test_SUB() {
 #[test]
 fn test_SLL() {
     let mut emulator_state = EmulatorState::default();
-
-    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
     let mut program = populate(&[
             // ADDI x1, x0, 1 -> Set x1 := 1
@@ -1379,9 +1364,6 @@ fn test_SLL() {
 fn test_SLT() {
     let mut emulator_state = EmulatorState::default();
 
-    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
-
     let mut program = populate(&[
             // ADDI x1, x0, 5 -> Set x1 := 5
             ISA::ADDI.build(Operands {
@@ -1439,9 +1421,6 @@ fn test_SLT() {
 fn test_SLTU() {
     let mut emulator_state = EmulatorState::default();
 
-    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
-
     let mut program = populate(&[
             // ADDI x1, x0, -1 -> Set x1 := -1 (interpreted as 0xFFFFFFFF unsigned)
             ISA::ADDI.build(Operands {
@@ -1488,9 +1467,6 @@ fn test_SLTU() {
 fn test_XOR() {
     let mut emulator_state = EmulatorState::default();
 
-    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
-
     let mut program = populate(&[
             // ADDI x1, x0, 0b1100 -> Set x1 := 12
             ISA::ADDI.build(Operands {
@@ -1527,9 +1503,6 @@ fn test_XOR() {
 #[test]
 fn test_SRL() {
     let mut emulator_state = EmulatorState::default();
-
-    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
     let mut program = populate(&[
             // ADDI x1, x0, 16 -> Set x1 := 16 (0b10000)
@@ -1568,9 +1541,6 @@ fn test_SRL() {
 fn test_SRA() {
     let mut emulator_state = EmulatorState::default();
 
-    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
-
     let mut program = populate(&[
             // ADDI x1, x0, -16 -> Set x1 := -16
             ISA::ADDI.build(Operands {
@@ -1607,9 +1577,6 @@ fn test_SRA() {
 #[test]
 fn test_OR() {
     let mut emulator_state = EmulatorState::default();
-
-    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
     let mut program = populate(&[
             // ADDI x1, x0, 0b1100 -> Set x1 := 12
@@ -1648,9 +1615,6 @@ fn test_OR() {
 fn test_AND() {
     let mut emulator_state = EmulatorState::default();
 
-    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
-
     let mut program = populate(&[
             // ADDI x1, x0, 0b1100 -> Set x1 := 12
             ISA::ADDI.build(Operands {
@@ -1688,13 +1652,6 @@ fn test_AND() {
 fn test_SB() {
     let mut emulator_state = EmulatorState::default();
 
-    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
-
-    // Set Data memory to have addresses 100 and 105
-    data_map.insert(100, 0);
-    data_map.insert(105, 0);
-
     let mut program = populate(&[
             // Set x1 := 10 (Data to write)
             ISA::ADDI.build(Operands {
@@ -1729,6 +1686,10 @@ fn test_SB() {
         ],
     );
 
+    // Set Data memory to have addresses 100 and 105
+    program.data_memory.insert(100, 0);
+    program.data_memory.insert(105, 0);
+
     // Instruction fetch
     emulator_state = clock(&emulator_state, &mut program);
 
@@ -1740,24 +1701,16 @@ fn test_SB() {
 
     // SB (x1 := 10) -> Write x1 to address 100 + x2
     emulator_state = clock(&emulator_state, &mut program);
-    assert_eq!(data_map.get(&100), Some(&10)); // x1 = 10 (100 + x2)
+    assert_eq!(program.data_memory.get(&100), Some(&10)); // x1 = 10 (100 + x2)
 
     // SB (x2 := 100) -> Write x2 to address 105 + x0
     emulator_state = clock(&emulator_state, &mut program);
-    assert_eq!(data_map.get(&105), Some(&100));
+    assert_eq!(program.data_memory.get(&105), Some(&100));
 }
 
 #[test]
 fn test_SH() {
     let mut emulator_state = EmulatorState::default();
-
-    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
-
-    // Set Data memory to have addresses 100 and 105
-    data_map.insert(100, 0);
-    data_map.insert(101, 0);
-    data_map.insert(102, 0);
 
     let mut program = populate(&[
             // Set x1 := 10 (Data to write)
@@ -1799,6 +1752,11 @@ fn test_SH() {
         ],
     );
 
+    // Set Data memory to have addresses 100 and 105
+    program.data_memory.insert(100, 0);
+    program.data_memory.insert(101, 0);
+    program.data_memory.insert(102, 0);
+
     // Instruction fetch
     emulator_state = clock(&emulator_state, &mut program);
 
@@ -1816,23 +1774,14 @@ fn test_SH() {
 
     // SH (x1 := 0xAF0C) -> Write x1 to address 100 + x2
     emulator_state = clock(&emulator_state, &mut program);
-    assert_eq!(data_map.get(&100), Some(&0xC));
-    assert_eq!(data_map.get(&101), Some(&0xAF));
-    assert_eq!(data_map.get(&102), Some(&0));
+    assert_eq!(program.data_memory.get(&100), Some(&0xC));
+    assert_eq!(program.data_memory.get(&101), Some(&0xAF));
+    assert_eq!(program.data_memory.get(&102), Some(&0));
 }
 
 #[test]
 fn test_SW() {
     let mut emulator_state = EmulatorState::default();
-
-    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
-
-    // Set Data memory to have addresses 100 and 105
-    data_map.insert(100, 0);
-    data_map.insert(101, 0);
-    data_map.insert(102, 0);
-    data_map.insert(103, 0);
 
     let mut program = populate(&[
             // Set x1 := 0x12345678 (Data to write)
@@ -1896,6 +1845,12 @@ fn test_SW() {
         ],
     );
 
+    // Set Data memory to have addresses 100 and 105
+    program.data_memory.insert(100, 0);
+    program.data_memory.insert(101, 0);
+    program.data_memory.insert(102, 0);
+    program.data_memory.insert(103, 0);
+    
     // Instruction fetch
     emulator_state = clock(&emulator_state, &mut program);
 
@@ -1910,18 +1865,15 @@ fn test_SW() {
 
     // SW (x1 := 0x12345678) -> Write x1 to address 100 + x2
     emulator_state = clock(&emulator_state, &mut program);
-    assert_eq!(data_map.get(&100), Some(&0x78));
-    assert_eq!(data_map.get(&101), Some(&0x56));
-    assert_eq!(data_map.get(&102), Some(&0x34));
-    assert_eq!(data_map.get(&103), Some(&0x12));
+    assert_eq!(program.data_memory.get(&100), Some(&0x78));
+    assert_eq!(program.data_memory.get(&101), Some(&0x56));
+    assert_eq!(program.data_memory.get(&102), Some(&0x34));
+    assert_eq!(program.data_memory.get(&103), Some(&0x12));
 }
 
 #[test]
 fn test_CSRRW() {
     let mut emulator_state = EmulatorState::default();
-
-    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
 
     let csr1 = 5;
     let csr2 = 6;
@@ -1983,10 +1935,6 @@ fn test_CSRRW() {
 #[test]
 fn test_CSRRS() {
     let mut emulator_state = EmulatorState::default();
-
-    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
-
     let csr1 = 5;
 
     let mut program = populate(&[
@@ -2046,10 +1994,6 @@ fn test_CSRRS() {
 #[test]
 fn test_CSRRC() {
     let mut emulator_state = EmulatorState::default();
-
-    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
-
     let csr1 = 5;
 
     let mut program = populate(&[
@@ -2110,9 +2054,6 @@ fn test_CSRRC() {
 fn test_CSRRWI() {
     let mut emulator_state = EmulatorState::default();
 
-    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
-
     let csr1 = 5;
 
     let mut program = populate(&[
@@ -2151,9 +2092,6 @@ fn test_CSRRWI() {
 fn test_CSRRSI() {
     let mut emulator_state = EmulatorState::default();
 
-    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
-
     let csr1 = 5;
 
     let mut program = populate(&[
@@ -2191,10 +2129,6 @@ fn test_CSRRSI() {
 #[test]
 fn test_CSRRCI() {
     let mut emulator_state = EmulatorState::default();
-
-    let mut instruction_map: BTreeMap<u32, u8> = BTreeMap::new();
-    let mut data_map: BTreeMap<u32, u8> = BTreeMap::new();
-
     let csr1 = 5;
 
     let mut program = populate(&[

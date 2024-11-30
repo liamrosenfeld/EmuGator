@@ -106,8 +106,7 @@ pub fn clock(org_state: &EmulatorState, program: &mut AssembledProgram) -> Emula
         let mut data_bytes: [u8; 4] = [0; 4];
         let success = (0usize..4usize).all(|i| {
             let addr = data_addr + i as u32;
-            let valid = program.instruction_memory.contains_key(&addr);
-
+            let valid = program.data_memory.contains_key(&addr);
             if valid {
                 // Read byte
                 data_bytes[i] = program.data_memory[&addr];
