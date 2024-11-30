@@ -1,7 +1,7 @@
-mod register_view;
-mod instruction_views;
-mod data_views;
-mod memory_view;
+pub mod register_view;
+pub mod instruction_views;
+pub mod data_views;
+pub mod memory_view;
 
 use dioxus::prelude::*;
 use dioxus_logger::tracing::info;
@@ -54,7 +54,8 @@ pub fn App() -> Element {
                                 match assembler::assemble(&source.read()) {
                                     Ok(assembled) => {
                                         let mut new_state = EmulatorState::default();
-                                        new_state.pipeline.datapath.instr_addr_o = assembled.get_section_start(Section::Text);
+                                        let start_addr = assembled.get_section_start(Section::Text);
+                                        new_state.pipeline.datapath.instr_addr_o = start_addr;
                                         emulator_state.set(new_state);
                                         assembled_program.set(Some(assembled));
                                     }
@@ -88,7 +89,8 @@ pub fn App() -> Element {
                 div {
                     class: "h-1/3 bg-gray-400 p-4",
                     MemoryView {
-                        assembled_program: assembled_program
+                        assembled_program: assembled_program,
+                        emulator_state: emulator_state
                     }
                 }
             }

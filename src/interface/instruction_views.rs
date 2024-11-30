@@ -1,9 +1,13 @@
 use dioxus::prelude::*;
 use crate::assembler::{AssembledProgram, Section};
+use crate::emulator::EmulatorState;
 
 #[component]
 #[allow(non_snake_case)]
-pub fn InstructionView(assembled_program: Signal<Option<AssembledProgram>>) -> Element {
+pub fn InstructionView(
+    assembled_program: Signal<Option<AssembledProgram>>,
+    emulator_state: Signal<EmulatorState>
+) -> Element {
     let program = assembled_program.read();
     
     // Early return if no program is assembled
@@ -18,6 +22,7 @@ pub fn InstructionView(assembled_program: Signal<Option<AssembledProgram>>) -> E
     let program = program.as_ref().unwrap();
     let instruction_memory = &program.instruction_memory;
     let text_start = program.get_section_start(Section::Text) as usize;
+    let current_pc = emulator_state.read().pipeline.datapath.instr_addr_o as usize;
     
     let total_instructions = instruction_memory.len() / 4; // Since each instruction is 4 bytes
 
@@ -57,7 +62,10 @@ pub fn InstructionView(assembled_program: Signal<Option<AssembledProgram>>) -> E
                                                     ((instruction_memory.get(&((base_addr + 3) as u32)).copied().unwrap_or(0) as u32) << 24);
                                                 
                                                 rsx! {
-                                                    "0x{instruction:08x}"
+                                                    span {
+                                                        class: if base_addr == current_pc { "text-orange-500" } else { "" },
+                                                        "0x{instruction:08x}"
+                                                    }
                                                 }
                                             }
                                         }
