@@ -416,7 +416,7 @@ fn parse_b_type(
         .get(parts[3])
         .ok_or(format!("Undefined label: {}", parts[3]))?;
 
-    let offset = (*target as i32) - (current_address as i32 + 4);
+    let offset = (*target as i32) - (current_address as i32);
     if offset & 1 != 0 {
         return Err("Branch target must be 2-byte aligned".to_string());
     }
