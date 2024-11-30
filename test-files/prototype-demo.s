@@ -9,7 +9,7 @@ main:
     # Example I-type instruction example
     ADDI x2, x9, 5      #   x2 = x9 + 5
     XORI x3, x2, 0xFF   #   x3 = x2 ^ 0xFF
-    SLLI x9, x2, 2      #   x9 = x2 >> 2
+    SLLI x9, x2, 2      #   x9 = x2 << 2
 
     # U-type instruction example
     LUI x4, 0xFFF       # (load upper immediate) x4 = 0xFFF << 20
