@@ -110,13 +110,7 @@ fn JALR(instr: &Instruction, state: &mut EmulatorState) {
     // TODO: Push onto RAS
     if state.pipeline.datapath.id_multicycle == 0 {
         let immed = (instr.immediate(InstructionFormat::I)).unwrap();
-        let new_pc = (state
-            .pipeline
-            .ID_pc
-            .checked_add_signed(immed)
-            .unwrap()
-            + state.x[instr.rs1() as usize])
-            & 0xFFFFFFFE;
+        let new_pc = (state.x[instr.rs1() as usize] as i32 + immed) as u32 & 0xFFFFFFFE;
 
         // if unaligned on 4-byte boundary
         if new_pc & 0x003 != 0x00 {

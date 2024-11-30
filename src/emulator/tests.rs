@@ -205,49 +205,56 @@ fn test_JALR() {
             rs1: 0,
             imm: 0x4,
             ..Default::default()
-        }), // ADDI ( x2 := x0 + 0x100)
+        }), // ADDI ( x2 := x0 + 0b100)
         ISA::JALR.build(Operands {
             rd: 1,
             rs1: 2,
-            imm: 0x4,
+            imm: 0x8,
             ..Default::default()
-        }), // JALR ( x1 := PC + 4, jump to (x2 + 0x4) & ~1)
+        }), // JALR ( x1 := PC + 8, jump to (x2 + 0x8) & ~1)
         ISA::ADDI.build(Operands {
-            rd: 5,
+            rd: 3,
             rs1: 0,
             imm: 1,
             ..Default::default()
-        }), // ADDI ( x5 := x0 + 1)
+        }), // ADDI ( x3 := x0 + 1)
         ISA::ADDI.build(Operands {
-            rd: 5,
+            rd: 4,
             rs1: 0,
             imm: 2,
             ..Default::default()
-        })
+        }),
+        ISA::ADDI.build(Operands {
+            rd: 5,
+            rs1: 0,
+            imm: 7,
+            ..Default::default()
+        }),
     ]);
 
     // Instruction fetch
     emulator_state = clock(&emulator_state, &mut program);
 
-    // After ADDI, x2 should be loaded with 0x100
+    // After ADDI, x2 should be loaded with 0b100
     emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[2], 0x4);
 
-    // After JALR, x1 should contain PC + 4, and the PC should jump to (x2 + 0x4) & ~1
+    // After JALR, x1 should contain PC + 8, and the PC should jump to (x4 + 0x2) & ~1
     let pc = emulator_state.pipeline.ID_pc;
     emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[1], pc + 4);
     assert_eq!(
         emulator_state.pipeline.datapath.instr_addr_o,
-        pc + (emulator_state.x[2] + 0x4) & !1
+        (emulator_state.x[2] + 0x8) & !1
     );
 
-    // Instruction fetch
+    // After ADDI
     emulator_state = clock(&emulator_state, &mut program);
-    assert_eq!(emulator_state.x[5], 0);
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[4], 2);
 
     emulator_state = clock(&emulator_state, &mut program);
-    assert_eq!(emulator_state.x[5], 2);
+    assert_eq!(emulator_state.x[5], 7);
 }
 
 #[test]
@@ -288,7 +295,7 @@ fn test_JALR_neg_offset() {
     assert_eq!(emulator_state.x[1], pc + 4);
     assert_eq!(
         emulator_state.pipeline.datapath.instr_addr_o,
-        (pc + emulator_state.x[2] - 4) & !1
+        (emulator_state.x[2] as i32 - 4) as u32 & !1
     );
 }
 

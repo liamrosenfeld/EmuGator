@@ -19,6 +19,10 @@ main:
 
     # J-type instruction
     JAL x5, function    # jump to function, storing return address in x5
+    SW x5, 4(x1)
+    XOR x1, x1, x1
+    XOR x1, x1, x1
+    XOR x1, x1, x1
 
 branch_target:
     ADDI x2, x6, 10
@@ -52,7 +56,7 @@ main:
     BNE x3, x2, branch_target
     XOR x5, x5, x5
     XOR x5, x5, x5
-    #JAL x5, function    # jump to function, storing return address in x5
+    # JAL x5, function    # jump to function, storing return address in x5
 
 branch_target:
     ADDI x2, x6, 10
