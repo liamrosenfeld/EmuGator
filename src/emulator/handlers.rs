@@ -64,6 +64,7 @@ pub fn get_handler(instr: Instruction) -> Result<InstructionHandler, ()> {
 
 fn LUI(instr: &Instruction, state: &mut EmulatorState) {
     let rd = instr.rd() as usize;
+    // immediate should already be shifted appropriate amount by encoder
     let immediate = instr.immediate(InstructionFormat::U).unwrap() as i32;
 
     state.x[rd] = immediate as u32;
@@ -71,15 +72,16 @@ fn LUI(instr: &Instruction, state: &mut EmulatorState) {
 
 fn AUIPC(instr: &Instruction, state: &mut EmulatorState) {
     let rd = instr.rd() as usize;
+    
+    // immediate should already be shifted by the appropriate amount by encoder
     let immediate = instr.immediate(InstructionFormat::U).unwrap() as i32;
-
     let result = state.pipeline.ID_pc as i32 + immediate;
 
     state.x[rd] = result as u32;
 }
 
 fn JAL(instr: &Instruction, state: &mut EmulatorState) {
-    // TODO: Push onto Return Address stack when rd = x1/x5
+    // TODO: Push onto Return Address stack when rd = x1 or x5
     if state.pipeline.datapath.id_multicycle == 0 {
         let immed = (instr.immediate(InstructionFormat::J)).unwrap();
         let new_pc = state.pipeline.ID_pc.checked_add_signed(immed).unwrap();
@@ -539,7 +541,6 @@ fn SRxI(instr: &Instruction, state: &mut EmulatorState) {
     let rs = instr.rs1() as usize;
     let immediate = instr.immediate(InstructionFormat::I).unwrap() as u32;
 
-    // TODO: ask christo if I can ignore the 0x1F
     let shamt = immediate & 0x1F;
     state.x[rd] = state.x[rs] >> (immediate & 0x1F)
         | (bitmask!(31;32-shamt) * bits!(state.x[rs], 31) * bits!(instr.raw(), 30));
@@ -659,8 +660,8 @@ fn ECALL(instr: &Instruction, state: &mut EmulatorState) {
 }
 
 fn EBREAK(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
     /* Call to debugger, likely going to be used to implement break points */
+    state.pipeline.datapath.debug_req_i = true;
 }
 
 fn CSRRW(instr: &Instruction, state: &mut EmulatorState) {
@@ -668,6 +669,7 @@ fn CSRRW(instr: &Instruction, state: &mut EmulatorState) {
     let rd = instr.rd() as usize;
     let rs1 = instr.rs1() as usize;
 
+    // if rd = x0, CSR shall do nothing
     if rd == 0 {
         return;
     }

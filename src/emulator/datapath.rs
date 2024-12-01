@@ -1,6 +1,7 @@
 /// Struct representing the datapath for the `cve2_top` module.
 /// Taken from https://github.com/openhwgroup/cve2/blob/main/rtl/cve2_top.sv
 
+#[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 pub struct CVE2Datapath {
     // Clock and Reset
