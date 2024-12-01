@@ -48,43 +48,57 @@ pub struct EmulatorState {
     pub pipeline: CVE2Pipeline,
 }
 
+fn rw_memory(memory: &mut BTreeMap<u32, u8>, address: u32, byte_enable: [bool; 4], wenable: bool, wdata: u32) -> Result<u32, ()> {
+    let mut rdata_bytes: [u8; 4] = [0; 4];
+    let wdata_bytes = wdata.to_le_bytes();
+    let success = (0usize..4usize).all(|i| {
+        if byte_enable[i] {
+            let addr = address + i as u32;
+            rdata_bytes[i] = if wenable {
+                memory.insert(addr, wdata_bytes[i]).unwrap_or_default()
+            } else {
+                memory.get(&addr).copied().unwrap_or_default()
+            };
+            true 
+        } else {
+            true
+        }
+    });
+
+    if success {
+        return Ok(u32::from_le_bytes(rdata_bytes));
+    } else {
+        return Err(());
+    }
+}
+
 pub fn clock(org_state: &EmulatorState, program: &mut AssembledProgram) -> EmulatorState {
     let mut next_state = org_state.clone();
 
     // Load the fetched instruction into the instr_rdata lines
     if next_state.pipeline.datapath.instr_req_o {
-        let instr_addr = next_state.pipeline.datapath.instr_addr_o;
-
         // Read the next instruction into the instruction fetch register
-        let mut instr_bytes: [u8; 4] = [0; 4];
-        let success = (0usize..4usize).all(|i| {
-            let addr = instr_addr + i as u32;
-            let valid = program.instruction_memory.contains_key(&addr);
+        match rw_memory(
+                &mut program.instruction_memory,
+                next_state.pipeline.datapath.instr_addr_o,
+                [true; 4],
+                false,
+                0,
+            ) {
+            Ok(instr) => {
+                next_state.pipeline.datapath.instr_rdata_i = instr;
+                next_state.pipeline.datapath.instr_gnt_i = true;
+                next_state.pipeline.datapath.instr_rvalid_i = true;
+                next_state.pipeline.datapath.instr_err_i = false;
 
-            if valid {
-                instr_bytes[i] = program.instruction_memory[&addr];
+                next_state.pipeline.IF = next_state.pipeline.datapath.instr_rdata_i;
+                next_state.pipeline.IF_pc = next_state.pipeline.datapath.instr_addr_o;
             }
-            valid
-        });
-
-        // Write the read data to the instruction read data lines
-        next_state.pipeline.datapath.instr_rdata_i = u32::from_le_bytes(instr_bytes);
-
-        // Set the appropriate flags
-        if success {
-            next_state.pipeline.datapath.instr_gnt_i = true;
-            next_state.pipeline.datapath.instr_rvalid_i = true;
-            next_state.pipeline.datapath.instr_err_i = false;
-
-            // Store the fetched instruction
-            next_state.pipeline.IF = next_state.pipeline.datapath.instr_rdata_i;
-            next_state.pipeline.IF_pc = next_state.pipeline.datapath.instr_addr_o;
-            // Move the program counter
-            next_state.pipeline.datapath.instr_addr_o += 4;
-        } else {
-            next_state.pipeline.datapath.instr_gnt_i = true;
-            next_state.pipeline.datapath.instr_rvalid_i = false;
-            next_state.pipeline.datapath.instr_err_i = true;
+            Err(_) => {
+                next_state.pipeline.datapath.instr_gnt_i = true;
+                next_state.pipeline.datapath.instr_rvalid_i = false;
+                next_state.pipeline.datapath.instr_err_i = true;
+            }
         }
     }
 
@@ -98,37 +112,24 @@ pub fn clock(org_state: &EmulatorState, program: &mut AssembledProgram) -> Emula
 
     // Perform any requested memory read/write
     if next_state.pipeline.datapath.data_req_o {
-        let data_addr = next_state.pipeline.datapath.data_addr_o;
-        let data_we = next_state.pipeline.datapath.data_we_o;
-        let data_be = next_state.pipeline.datapath.data_be_o;
-        let data_wdata = next_state.pipeline.datapath.data_wdata_o;
-
-        let mut data_bytes: [u8; 4] = [0; 4];
-        let success = (0usize..4usize).all(|i| {
-            let addr = data_addr + i as u32;
-            let valid = program.data_memory.contains_key(&addr);
-            if valid {
-                // Read byte
-                data_bytes[i] = program.data_memory[&addr];
-                // If we are writing then write the byte
-                if data_we && bits!(data_be, i) != 0 {
-                    program.data_memory.insert(addr, bits!(data_wdata, i * 8, 8) as u8);
-                }
+        match rw_memory(
+            &mut program.data_memory,
+            next_state.pipeline.datapath.data_addr_o,
+            next_state.pipeline.datapath.data_be_o,
+            next_state.pipeline.datapath.data_we_o,
+            next_state.pipeline.datapath.data_wdata_o,
+        ) {
+            Ok(rdata) => {
+                next_state.pipeline.datapath.data_rdata_i = rdata;
+                next_state.pipeline.datapath.data_gnt_i = true;
+                next_state.pipeline.datapath.data_rvalid_i = true;
+                next_state.pipeline.datapath.data_err_i = false;
             }
-            valid
-        });
-
-        next_state.pipeline.datapath.data_rdata_i = u32::from_le_bytes(data_bytes);
-
-        // Set the appropriate flags
-        if success {
-            next_state.pipeline.datapath.data_gnt_i = true;
-            next_state.pipeline.datapath.data_rvalid_i = true;
-            next_state.pipeline.datapath.data_err_i = false;
-        } else {
-            next_state.pipeline.datapath.data_gnt_i = true;
-            next_state.pipeline.datapath.data_rvalid_i = false;
-            next_state.pipeline.datapath.data_err_i = true;
+            Err(_) => {
+                next_state.pipeline.datapath.data_gnt_i = true;
+                next_state.pipeline.datapath.data_rvalid_i = false;
+                next_state.pipeline.datapath.data_err_i = true;
+            }
         }
     }
 
@@ -136,6 +137,7 @@ pub fn clock(org_state: &EmulatorState, program: &mut AssembledProgram) -> Emula
     if next_state.pipeline.datapath.fetch_enable_i {
         next_state.pipeline.ID = next_state.pipeline.IF;
         next_state.pipeline.ID_pc = next_state.pipeline.IF_pc;
+        next_state.pipeline.datapath.instr_addr_o += 4;
     }
     return next_state;
 }
