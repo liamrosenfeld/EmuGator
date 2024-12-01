@@ -16,15 +16,15 @@ pub struct CVE2Datapath {
     pub instr_err_i: bool,    // Input signal indicating an error during instruction fetch.
 
     // Data memory interface
-    pub data_req_o: bool,    // Output signal requesting a data memory operation.
-    pub data_addr_o: u32,    // Output address for the data memory operation.
-    pub data_wdata_o: u32,   // Output data to be written to memory.
-    pub data_rdata_i: u32,   // Input data read from memory.
-    pub data_we_o: bool,     // Output write-enable signal for data memory.
-    pub data_be_o: u8,       // Output byte-enable (4-bit) for selective byte access in 32-bit words.
-    pub data_gnt_i: bool,    // Input signal indicating the data request is granted.
-    pub data_rvalid_i: bool, // Input signal indicating valid data is available.
-    pub data_err_i: bool,    // Input signal indicating an error during the data memory operation.
+    pub data_req_o: bool,       // Output signal requesting a data memory operation.
+    pub data_addr_o: u32,       // Output address for the data memory operation.
+    pub data_wdata_o: u32,      // Output data to be written to memory.
+    pub data_rdata_i: u32,      // Input data read from memory.
+    pub data_we_o: bool,        // Output write-enable signal for data memory.
+    pub data_be_o: [bool; 4],   // Output byte-enable (4-bit) for selective byte access in 32-bit words.
+    pub data_gnt_i: bool,       // Input signal indicating the data request is granted.
+    pub data_rvalid_i: bool,    // Input signal indicating valid data is available.
+    pub data_err_i: bool,       // Input signal indicating an error during the data memory operation.
     
     // Core execution control signals
     pub id_multicycle: u32,   // Output signal indicating if the instruction is a multi-cycle instruction.

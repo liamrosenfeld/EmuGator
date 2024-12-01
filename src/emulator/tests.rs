@@ -69,10 +69,11 @@ fn test_AUIPC() {
     emulator_state = clock(&emulator_state, &mut program);
 
     // After AUIPC, x1 should hold the value (PC + 0x12345000)
+    let pc = emulator_state.pipeline.ID_pc;
     emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(
         emulator_state.x[1],
-        emulator_state.pipeline.ID_pc + 0x12345000
+        pc + 0x12345000
     );
 }
 
@@ -711,6 +712,295 @@ fn test_BGEU() {
     // ADDI ( x5 := x0 + 1)
     emulator_state = clock(&emulator_state, &mut program);
     assert_eq!(emulator_state.x[5], 1);
+}
+
+#[test]
+fn test_LB() {
+    let mut emulator_state = EmulatorState::default();
+
+    let mut program = populate(&[
+        ISA::ADDI.build(Operands {
+            rd: 1,
+            rs1: 0,
+            imm: 0x8,
+            ..Default::default()
+        }),
+        ISA::LB.build(Operands {
+            rd: 5,
+            rs1: 1,
+            imm: 0x8,
+            ..Default::default()
+        }),
+        ISA::LB.build(Operands {
+            rd: 5,
+            rs1: 1,
+            imm: 0xA,
+            ..Default::default()
+        }),
+    ]);
+
+    program.data_memory.insert(0x10, 0xFB);
+    program.data_memory.insert(0x11, 0xFC);
+    program.data_memory.insert(0x12, 0x7D);
+    program.data_memory.insert(0x13, 0x7E);
+
+    // Instruction fetch
+    emulator_state = clock(&emulator_state, &mut program);
+
+    // ADDI ( x1 := x0 + 0x8)
+    emulator_state = clock(&emulator_state, &mut program);
+
+    // LB ( x5 := MEM[x1 + 0x8])
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[5], 0xFFFFFFFB);
+
+    // LB ( x5 := MEM[x1 + 0xA])
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[5], 0x0000007D);
+}
+
+#[test]
+fn test_LH() {
+    let mut emulator_state = EmulatorState::default();
+
+    let mut program = populate(&[
+        ISA::ADDI.build(Operands {
+            rd: 1,
+            rs1: 0,
+            imm: 0x8,
+            ..Default::default()
+        }),
+        ISA::LH.build(Operands {
+            rd: 5,
+            rs1: 1,
+            imm: 0x8,
+            ..Default::default()
+        }),
+        ISA::LH.build(Operands {
+            rd: 5,
+            rs1: 1,
+            imm: 0xA,
+            ..Default::default()
+        }),
+    ]);
+
+    program.data_memory.insert(0x10, 0xFB);
+    program.data_memory.insert(0x11, 0xFC);
+    program.data_memory.insert(0x12, 0x7D);
+    program.data_memory.insert(0x13, 0x7E);
+
+    // Instruction fetch
+    emulator_state = clock(&emulator_state, &mut program);
+
+    // ADDI ( x1 := x0 + 0x8)
+    emulator_state = clock(&emulator_state, &mut program);
+
+    // LB ( x5 := MEM[x1 + 0x8])
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[5], 0xFFFFFCFB);
+
+    // LB ( x5 := MEM[x1 + 0xA])
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[5], 0x00007E7D);
+}
+
+#[test]
+fn test_LW() {
+    let mut emulator_state = EmulatorState::default();
+
+    let mut program = populate(&[
+        ISA::ADDI.build(Operands {
+            rd: 1,
+            rs1: 0,
+            imm: 0x8,
+            ..Default::default()
+        }),
+        ISA::LW.build(Operands {
+            rd: 5,
+            rs1: 1,
+            imm: 0x8,
+            ..Default::default()
+        }),
+    ]);
+
+    program.data_memory.insert(0x10, 0xFB);
+    program.data_memory.insert(0x11, 0xFC);
+    program.data_memory.insert(0x12, 0x7D);
+    program.data_memory.insert(0x13, 0x7E);
+
+    // Instruction fetch
+    emulator_state = clock(&emulator_state, &mut program);
+
+    // ADDI ( x1 := x0 + 0x8)
+    emulator_state = clock(&emulator_state, &mut program);
+
+    // LB ( x5 := MEM[x1 + 0x8])
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(emulator_state.x[5], 0x7E7DFCFB);
+}
+
+#[test]
+fn test_SB() {
+    let mut emulator_state = EmulatorState::default();
+
+    let mut program = populate(&[
+            // Set x1 := 10 (Data to write)
+            ISA::LUI.build(Operands {
+                rd: 1,
+                imm: 0xFEFDF000u32.wrapping_sub(0xFFFFF000u32) as i32,
+                ..Default::default()
+            }),
+            ISA::ADDI.build(Operands {
+                rd: 1,
+                rs1: 1,
+                imm: 0xCFB,
+                ..Default::default()
+            }),
+            // Set x2 := 100 (Base Address to write to)
+            ISA::ADDI.build(Operands {
+                rd: 2,
+                rs1: 0,
+                imm: 100,
+                ..Default::default()
+            }),
+            // SB x1, 100(x2) -> Write x1 to address x2 (100) + 5
+            ISA::SB.build(Operands {
+                rd: 0,
+                rs1: 2,
+                rs2: 1,
+                imm: 5,
+                ..Default::default()
+            }),
+        ],
+    );
+
+    // Instruction fetch
+    emulator_state = clock(&emulator_state, &mut program);
+
+    // Set x1 := 0xFEFDFCFB
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
+
+    // Set x2 := 100
+    emulator_state = clock(&emulator_state, &mut program);
+
+    // SB (x1 := 10) -> Write x1 to address 100 + x2
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(program.data_memory.get(&105), Some(&0xFB)); // x1 = 0xFEFDFCFB (100 + x2)
+    assert_eq!(program.data_memory.get(&106), None);
+    assert_eq!(program.data_memory.get(&107), None);
+    assert_eq!(program.data_memory.get(&108), None);
+}
+
+#[test]
+fn test_SH() {
+    let mut emulator_state = EmulatorState::default();
+
+    let mut program = populate(&[
+            // Set x1 := 10 (Data to write)
+            ISA::LUI.build(Operands {
+                rd: 1,
+                imm: 0xFEFDF000u32.wrapping_sub(0xFFFFF000u32) as i32,
+                ..Default::default()
+            }),
+            ISA::ADDI.build(Operands {
+                rd: 1,
+                rs1: 1,
+                imm: 0xCFB,
+                ..Default::default()
+            }),
+            // Set x2 := 100 (Base Address to write to)
+            ISA::ADDI.build(Operands {
+                rd: 2,
+                rs1: 0,
+                imm: 100,
+                ..Default::default()
+            }),
+            // SH x1, 100(x2) -> Write x1 to address x2 (100) + 5
+            ISA::SH.build(Operands {
+                rd: 0,
+                rs1: 2,
+                rs2: 1,
+                imm: 5,
+                ..Default::default()
+            }),
+        ],
+    );
+
+    // Instruction fetch
+    emulator_state = clock(&emulator_state, &mut program);
+
+    // Set x1 := 0xFEFDFCFB
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
+
+    // Set x2 := 100
+    emulator_state = clock(&emulator_state, &mut program);
+
+    // SH (x1 := 10) -> Write x1 to address 100 + x2
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(program.data_memory.get(&105), Some(&0xFB)); // x1 = 0xFEFDFCFB (100 + x2)
+    assert_eq!(program.data_memory.get(&106), Some(&0xFC));
+    assert_eq!(program.data_memory.get(&107), None);
+    assert_eq!(program.data_memory.get(&108), None);
+}
+
+#[test]
+fn test_SW() {
+    let mut emulator_state = EmulatorState::default();
+
+    let mut program = populate(&[
+            // Set x1 := 10 (Data to write)
+            ISA::LUI.build(Operands {
+                rd: 1,
+                imm: 0xFEFDF000u32.wrapping_sub(0xFFFFF000u32) as i32,
+                ..Default::default()
+            }),
+            ISA::ADDI.build(Operands {
+                rd: 1,
+                rs1: 1,
+                imm: 0xCFB,
+                ..Default::default()
+            }),
+            // Set x2 := 100 (Base Address to write to)
+            ISA::ADDI.build(Operands {
+                rd: 2,
+                rs1: 0,
+                imm: 100,
+                ..Default::default()
+            }),
+            // SW x1, 100(x2) -> Write x1 to address x2 (100) + 5
+            ISA::SW.build(Operands {
+                rd: 0,
+                rs1: 2,
+                rs2: 1,
+                imm: 5,
+                ..Default::default()
+            }),
+        ],
+    );
+
+    // Instruction fetch
+    emulator_state = clock(&emulator_state, &mut program);
+
+    // Set x1 := 0xFEFDFCFB
+    emulator_state = clock(&emulator_state, &mut program);
+    emulator_state = clock(&emulator_state, &mut program);
+
+    // Set x2 := 100
+    emulator_state = clock(&emulator_state, &mut program);
+
+    // SW (x1 := 10) -> Write x1 to address 100 + x2
+    emulator_state = clock(&emulator_state, &mut program);
+    assert_eq!(program.data_memory.get(&105), Some(&0xFB)); // x1 = 0xFEFDFCFB (100 + x2)
+    assert_eq!(program.data_memory.get(&106), Some(&0xFC));
+    assert_eq!(program.data_memory.get(&107), Some(&0xFD));
+    assert_eq!(program.data_memory.get(&108), Some(&0xFE));
 }
 
 #[test]
@@ -1652,229 +1942,6 @@ fn test_AND() {
     emulator_state = clock(&emulator_state, &mut program);
 
     assert_eq!(emulator_state.x[3], 0b1000); // x3 = 8 (0b1100 & 0b1010)
-}
-
-#[test]
-fn test_SB() {
-    let mut emulator_state = EmulatorState::default();
-
-    let mut program = populate(&[
-            // Set x1 := 10 (Data to write)
-            ISA::ADDI.build(Operands {
-                rd: 1,
-                rs1: 0,
-                imm: 10,
-                ..Default::default()
-            }),
-            // Set x2 := 100 (Base Address to write to)
-            ISA::ADDI.build(Operands {
-                rd: 2,
-                rs1: 0,
-                imm: 100,
-                ..Default::default()
-            }),
-            // SB x1, 100(x2) -> Write x1 to address 100 + x2
-            ISA::SB.build(Operands {
-                rd: 0,
-                rs1: 2,
-                rs2: 1,
-                imm: 0,
-                ..Default::default()
-            }),
-            // SB x2, 105(x0) -> Write x2 to address 105 + x0
-            ISA::SB.build(Operands {
-                rd: 0,
-                rs1: 2,
-                rs2: 2,
-                imm: 5,
-                ..Default::default()
-            }),
-        ],
-    );
-
-    // Set Data memory to have addresses 100 and 105
-    program.data_memory.insert(100, 0);
-    program.data_memory.insert(105, 0);
-
-    // Instruction fetch
-    emulator_state = clock(&emulator_state, &mut program);
-
-    // Set x1 := 10
-    emulator_state = clock(&emulator_state, &mut program);
-
-    // Set x2 := 100
-    emulator_state = clock(&emulator_state, &mut program);
-
-    // SB (x1 := 10) -> Write x1 to address 100 + x2
-    emulator_state = clock(&emulator_state, &mut program);
-    assert_eq!(program.data_memory.get(&100), Some(&10)); // x1 = 10 (100 + x2)
-
-    // SB (x2 := 100) -> Write x2 to address 105 + x0
-    clock(&emulator_state, &mut program);
-    assert_eq!(program.data_memory.get(&105), Some(&100));
-}
-
-#[test]
-fn test_SH() {
-    let mut emulator_state = EmulatorState::default();
-
-    let mut program = populate(&[
-            // Set x1 := 10 (Data to write)
-            ISA::ADDI.build(Operands {
-                rd: 1,
-                rs1: 0,
-                imm: 0xAF,
-                ..Default::default()
-            }),
-            // Set x1 := x1 << 8 (0xAF << 8 = 0xAF00)
-            ISA::SLLI.build(Operands {
-                rd: 1,
-                rs1: 1,
-                imm: 8,
-                ..Default::default()
-            }),
-            // Add 12 to x1
-            ISA::ADDI.build(Operands {
-                rd: 1,
-                rs1: 1,
-                imm: 12,
-                ..Default::default()
-            }),
-            // Set x2 := 100 (Base Address to write to)
-            ISA::ADDI.build(Operands {
-                rd: 2,
-                rs1: 0,
-                imm: 100,
-                ..Default::default()
-            }),
-            // SH x1, 100(x2) -> Write x1 to address 100 + x2
-            ISA::SH.build(Operands {
-                rd: 0,
-                rs1: 2,
-                rs2: 1,
-                imm: 0,
-                ..Default::default()
-            }),
-        ],
-    );
-
-    // Set Data memory to have addresses 100 and 105
-    program.data_memory.insert(100, 0);
-    program.data_memory.insert(101, 0);
-    program.data_memory.insert(102, 0);
-
-    // Instruction fetch
-    emulator_state = clock(&emulator_state, &mut program);
-
-    // Set x1 := 0xAF
-    emulator_state = clock(&emulator_state, &mut program);
-
-    // Set x1 := x1 << 8 (0xAF << 8 = 0xAF00)
-    emulator_state = clock(&emulator_state, &mut program);
-
-    // Add 12 to x1
-    emulator_state = clock(&emulator_state, &mut program);
-
-    // Set x2 := 100
-    emulator_state = clock(&emulator_state, &mut program);
-
-    // SH (x1 := 0xAF0C) -> Write x1 to address 100 + x2
-    clock(&emulator_state, &mut program);
-    assert_eq!(program.data_memory.get(&100), Some(&0xC));
-    assert_eq!(program.data_memory.get(&101), Some(&0xAF));
-    assert_eq!(program.data_memory.get(&102), Some(&0));
-}
-
-#[test]
-fn test_SW() {
-    let mut emulator_state = EmulatorState::default();
-
-    let mut program = populate(&[
-            // Set x1 := 0x12345678 (Data to write)
-            ISA::ADDI.build(Operands {
-                rd: 1,
-                rs1: 0,
-                imm: 0x12,
-                ..Default::default()
-            }),
-            ISA::SLLI.build(Operands {
-                rd: 1,
-                rs1: 1,
-                imm: 8,
-                ..Default::default()
-            }),
-            ISA::ADDI.build(Operands {
-                rd: 1,
-                rs1: 1,
-                imm: 0x34,
-                ..Default::default()
-            }),
-            ISA::SLLI.build(Operands {
-                rd: 1,
-                rs1: 1,
-                imm: 8,
-                ..Default::default()
-            }),
-            ISA::ADDI.build(Operands {
-                rd: 1,
-                rs1: 1,
-                imm: 0x56,
-                ..Default::default()
-            }),
-            ISA::SLLI.build(Operands {
-                rd: 1,
-                rs1: 1,
-                imm: 8,
-                ..Default::default()
-            }),
-            ISA::ADDI.build(Operands {
-                rd: 1,
-                rs1: 1,
-                imm: 0x78,
-                ..Default::default()
-            }),
-            // Set x2 := 100 (Base Address to write to)
-            ISA::ADDI.build(Operands {
-                rd: 2,
-                rs1: 0,
-                imm: 100,
-                ..Default::default()
-            }),
-            // SW x1, 100(x2) -> Write x1 to address 100 + x2
-            ISA::SW.build(Operands {
-                rd: 0,
-                rs1: 2,
-                rs2: 1,
-                imm: 0,
-                ..Default::default()
-            }),
-        ],
-    );
-
-    // Set Data memory to have addresses 100 and 105
-    program.data_memory.insert(100, 0);
-    program.data_memory.insert(101, 0);
-    program.data_memory.insert(102, 0);
-    program.data_memory.insert(103, 0);
-    
-    // Instruction fetch
-    emulator_state = clock(&emulator_state, &mut program);
-
-    // Set x1 := 0x12345678
-    for _ in 0..8 {
-        emulator_state = clock(&emulator_state, &mut program);
-    }
-    assert_eq!(emulator_state.x[1], 0x12345678);
-
-    // Set x2 := 100
-    emulator_state = clock(&emulator_state, &mut program);
-
-    // SW (x1 := 0x12345678) -> Write x1 to address 100 + x2
-    clock(&emulator_state, &mut program);
-    assert_eq!(program.data_memory.get(&100), Some(&0x78));
-    assert_eq!(program.data_memory.get(&101), Some(&0x56));
-    assert_eq!(program.data_memory.get(&102), Some(&0x34));
-    assert_eq!(program.data_memory.get(&103), Some(&0x12));
 }
 
 #[test]

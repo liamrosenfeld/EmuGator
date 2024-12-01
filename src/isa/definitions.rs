@@ -283,11 +283,11 @@ impl ISA {
             },
 
             // Load instructions (I-type)
-            LW => InstructionDefinition {
-                name: "LW",
+            LB => InstructionDefinition {
+                name: "LB",
                 format: InstructionFormat::I,
                 opcode: 0b0000011,
-                funct3: Some(0x2),
+                funct3: Some(0x0),
                 funct7: None,
             },
             LH => InstructionDefinition {
@@ -297,18 +297,11 @@ impl ISA {
                 funct3: Some(0x1),
                 funct7: None,
             },
-            LHU => InstructionDefinition {
-                name: "LHU",
+            LW => InstructionDefinition {
+                name: "LW",
                 format: InstructionFormat::I,
                 opcode: 0b0000011,
-                funct3: Some(0x5),
-                funct7: None,
-            },
-            LB => InstructionDefinition {
-                name: "LB",
-                format: InstructionFormat::I,
-                opcode: 0b0000011,
-                funct3: Some(0x0),
+                funct3: Some(0x2),
                 funct7: None,
             },
             LBU => InstructionDefinition {
@@ -316,6 +309,13 @@ impl ISA {
                 format: InstructionFormat::I,
                 opcode: 0b0000011,
                 funct3: Some(0x4),
+                funct7: None,
+            },
+            LHU => InstructionDefinition {
+                name: "LHU",
+                format: InstructionFormat::I,
+                opcode: 0b0000011,
+                funct3: Some(0x5),
                 funct7: None,
             },
 
