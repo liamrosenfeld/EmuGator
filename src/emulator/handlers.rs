@@ -511,12 +511,24 @@ fn AND(instr: &Instruction, state: &mut EmulatorState) {
     state.x[rd] = state.x[rs1] & state.x[rs2];
 }
 
-fn FENCE(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+fn FENCE(_instr: &Instruction, _state: &mut EmulatorState) {
+    /*
+     * Instruction for ordering device I/O and memory accesses
+     * as viewed by other RISC-V harts and external devices
+     * We are not emulating external devices, so this is unncessary
+     * to implement and can be implemented as NOP (Chapter 2, page 13
+     * of the RISC-V Instruction Set Manual)
+     */
 }
 
-fn FENCE_TSO(instr: &Instruction, state: &mut EmulatorState) {
-    todo!()
+fn FENCE_TSO(_instr: &Instruction, _state: &mut EmulatorState) {
+    /*
+     * Instruction for ordering device I/O and memory accesses
+     * as viewed by other RISC-V harts and external devices
+     * We are not emulating external devices, so this is unncessary
+     * to implement and can be implemented as NOP (Chapter 2, page 13
+     * of the RISC-V Instruction Set Manual)
+     */
 }
 
 fn PAUSE(instr: &Instruction, state: &mut EmulatorState) {
@@ -525,10 +537,12 @@ fn PAUSE(instr: &Instruction, state: &mut EmulatorState) {
 
 fn ECALL(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
+    /* System call */
 }
 
 fn EBREAK(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
+    /* Call to debugger, likely going to be used to implement break points */
 }
 
 fn CSRRW(instr: &Instruction, state: &mut EmulatorState) {

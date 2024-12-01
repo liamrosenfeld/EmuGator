@@ -21,13 +21,13 @@ pub struct CVE2Datapath {
     pub data_wdata_o: u32,   // Output data to be written to memory.
     pub data_rdata_i: u32,   // Input data read from memory.
     pub data_we_o: bool,     // Output write-enable signal for data memory.
-    pub data_be_o: u8, // Output byte-enable (4-bit) for selective byte access in 32-bit words.
-    pub data_gnt_i: bool, // Input signal indicating the data request is granted.
+    pub data_be_o: u8,       // Output byte-enable (4-bit) for selective byte access in 32-bit words.
+    pub data_gnt_i: bool,    // Input signal indicating the data request is granted.
     pub data_rvalid_i: bool, // Input signal indicating valid data is available.
     pub data_err_i: bool,    // Input signal indicating an error during the data memory operation.
     
     // Core execution control signals
-    pub id_multicycle: u32, // Output signal indicating if the instruction is a multi-cycle instruction.
+    pub id_multicycle: u32,   // Output signal indicating if the instruction is a multi-cycle instruction.
     pub fetch_enable_i: bool, // Input signal enabling instruction fetch.
     pub core_sleep_o: bool,   // Output signal indicating if the core is in sleep mode.
 
@@ -79,9 +79,9 @@ impl Default for CVE2Datapath {
 #[allow(non_snake_case)]
 #[derive(Copy, Clone, Default, Debug)]
 pub struct CVE2Pipeline {
-    pub IF: u32, // Instruction Fetch Buffer
+    pub IF: u32,    // Instruction Fetch Buffer
     pub IF_pc: u32, // Program Counter for the IF stage
-    pub ID: u32, // Instruction Decode Buffer
+    pub ID: u32,    // Instruction Decode Buffer
     pub ID_pc: u32, // Program Counter for the ID stage
     pub datapath: CVE2Datapath,
 }
