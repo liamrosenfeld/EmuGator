@@ -1,5 +1,7 @@
 use std::collections::BTreeMap;
 
+use bimap::BiBTreeMap;
+
 use super::*;
 use crate::include_test_file;
 
@@ -26,7 +28,7 @@ fn print_some_output() {
     }
 
     println!("\nReconstructed 32-bit Instructions:");
-    for &addr in source_map.keys() {
+    for &addr in source_map.left_values() {
         let instruction = u32::from_le_bytes([
             inst_mem[&addr],
             inst_mem[&(addr + 1)],
@@ -78,7 +80,7 @@ fn assembler_different_locations() {
 
     for (addr, expected_line) in expected_source_lines {
         assert_eq!(
-            source_map.get(&addr),
+            source_map.get_by_left(&addr),
             Some(&expected_line),
             "Mismatch in source map at address 0x{:08X}",
             addr
@@ -191,7 +193,7 @@ fn assembler_simple_loop() {
     .collect();
 
     // Verify source map
-    let expected_source_map: BTreeMap<u32, usize> = [
+    let expected_source_map: BiBTreeMap<u32, usize> = [
         (0x00000000, 10),
         (0x00000004, 11),
         (0x00000008, 12),
@@ -244,7 +246,7 @@ fn assembler_simple_loop() {
 
         // Print full 32-bit instructions for debugging
         println!("\nReconstructed 32-bit Instructions:");
-        for &addr in source_map.keys() {
+        for &addr in source_map.left_values() {
             let actual = u32::from_le_bytes([
                 inst_mem[&addr],
                 inst_mem[&(addr + 1)],
@@ -269,13 +271,13 @@ fn assembler_simple_loop() {
     if *source_map != expected_source_map {
         println!("Source Map Differences:");
         for (&addr, &line) in source_map {
-            let expected = expected_source_map.get(&addr);
+            let expected = expected_source_map.get_by_left(&addr);
             if expected != Some(&line) {
                 println!("0x{:08X}: Got line {}, Expected {:?}", addr, line, expected);
             }
         }
         for (&addr, &line) in &expected_source_map {
-            if !source_map.contains_key(&addr) {
+            if !source_map.contains_left(&addr) {
                 println!("0x{:08X}: Missing, Expected line {}", addr, line);
             }
         }
@@ -506,7 +508,7 @@ fn assembler_all_instructions() {
     .collect();
 
     // Verify instruction source map
-    let expected_source_map: BTreeMap<u32, usize> = [
+    let expected_source_map: BiBTreeMap<u32, usize> = [
         (0x00000000, 10),
         (0x00000004, 11),
         (0x00000008, 12),
@@ -619,12 +621,12 @@ fn assembler_all_instructions() {
     if *source_map != expected_source_map {
         println!("Source Map Differences:");
         for (addr, &line) in &expected_source_map {
-            if !source_map.contains_key(addr) || source_map[addr] != line {
+            if !source_map.contains_left(addr) || source_map.get_by_left(addr) != Some(&line) {
                 println!(
                     "At 0x{:08X}: Expected line {}, got {:?}",
                     addr,
                     line,
-                    source_map.get(addr)
+                    source_map.get_by_left(addr)
                 );
             }
         }

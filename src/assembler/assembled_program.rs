@@ -2,13 +2,23 @@ use std::{
     collections::{BTreeMap, HashMap},
     str::FromStr,
 };
+use bimap::BiBTreeMap;
 
 #[derive(Debug)]
 pub struct AssembledProgram {
+    /// Map of instruction memory addresses to instruction bytes
     pub instruction_memory: BTreeMap<u32, u8>,
+
+    /// Map of data memory addresses to data bytes
     pub data_memory: BTreeMap<u32, u8>,
-    pub source_map: BTreeMap<u32, usize>,
+
+    /// Map of line numbers (left) to instruction addresses (right)
+    pub source_map: BiBTreeMap<u32, usize>,
+
+    /// Map of instruction labels to addresses
     pub labels: HashMap<String, u32>,
+
+    /// Map of data labels to addresses
     pub data_labels: HashMap<String, u32>,
 }
 
@@ -17,7 +27,7 @@ impl AssembledProgram {
         AssembledProgram {
             instruction_memory: BTreeMap::new(),
             data_memory: BTreeMap::new(),
-            source_map: BTreeMap::new(),
+            source_map: BiBTreeMap::new(),
             labels: HashMap::new(),
             data_labels: HashMap::new(),
         }
@@ -25,7 +35,7 @@ impl AssembledProgram {
 
     pub fn get_section_start(&self, section: Section) -> u32 {
         match section {
-            Section::Text => self.source_map.keys().next().copied().unwrap_or(0),
+            Section::Text => self.source_map.left_values().next().copied().unwrap_or(0),
             Section::Data => self.data_memory.keys().next().copied().unwrap_or(0),
         }
     }
@@ -61,7 +71,7 @@ impl AssembledProgram {
         &self,
     ) -> (
         &BTreeMap<u32, u8>,
-        &BTreeMap<u32, usize>,
+        &BiBTreeMap<u32, usize>,
         &BTreeMap<u32, u8>,
     ) {
         (
