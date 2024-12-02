@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 
 use super::{EmulatorState, InstructionHandler};
-use crate::isa::{Instruction, InstructionFormat};
+use crate::isa::{Instruction};
 use crate::{bitmask, bits};
 
 pub fn get_handler(instr: Instruction) -> Result<InstructionHandler, ()> {
@@ -65,7 +65,7 @@ pub fn get_handler(instr: Instruction) -> Result<InstructionHandler, ()> {
 fn LUI(instr: &Instruction, state: &mut EmulatorState) {
     let rd = instr.rd() as usize;
     // immediate should already be shifted appropriate amount by encoder
-    let immediate = instr.immediate(InstructionFormat::U).unwrap() as i32;
+    let immediate = instr.immediate().unwrap() as i32;
 
     state.x[rd] = immediate as u32;
 }
@@ -74,7 +74,7 @@ fn AUIPC(instr: &Instruction, state: &mut EmulatorState) {
     let rd = instr.rd() as usize;
     
     // immediate should already be shifted by the appropriate amount by encoder
-    let immediate = instr.immediate(InstructionFormat::U).unwrap() as i32;
+    let immediate = instr.immediate().unwrap() as i32;
     let result = state.pipeline.ID_pc as i32 + immediate;
 
     state.x[rd] = result as u32;
@@ -83,7 +83,7 @@ fn AUIPC(instr: &Instruction, state: &mut EmulatorState) {
 fn JAL(instr: &Instruction, state: &mut EmulatorState) {
     // TODO: Push onto Return Address stack when rd = x1 or x5
     if state.pipeline.datapath.id_multicycle == 0 {
-        let immed = (instr.immediate(InstructionFormat::J)).unwrap();
+        let immed = (instr.immediate()).unwrap();
         let new_pc = state.pipeline.ID_pc.checked_add_signed(immed).unwrap();
 
         // if unaligned on 4-byte boundary
@@ -107,7 +107,7 @@ fn JAL(instr: &Instruction, state: &mut EmulatorState) {
 fn JALR(instr: &Instruction, state: &mut EmulatorState) {
     // TODO: Push onto RAS
     if state.pipeline.datapath.id_multicycle == 0 {
-        let immed = (instr.immediate(InstructionFormat::I)).unwrap();
+        let immed = (instr.immediate()).unwrap();
         let new_pc = (state.x[instr.rs1() as usize] as i32 + immed) as u32 & bitmask!(31;1);
 
         // if unaligned on 4-byte boundary
@@ -131,7 +131,7 @@ fn JALR(instr: &Instruction, state: &mut EmulatorState) {
 
 fn BEQ(instr: &Instruction, state: &mut EmulatorState) {
     if state.pipeline.datapath.id_multicycle == 0 {
-        let immed = (instr.immediate(InstructionFormat::B)).unwrap();
+        let immed = (instr.immediate()).unwrap();
         let new_pc = state.pipeline.ID_pc.checked_add_signed(immed).unwrap();
 
         // if unaligned on 4-byte boundary
@@ -153,7 +153,7 @@ fn BEQ(instr: &Instruction, state: &mut EmulatorState) {
 
 fn BNE(instr: &Instruction, state: &mut EmulatorState) {
     if state.pipeline.datapath.id_multicycle == 0 {
-        let immed = (instr.immediate(InstructionFormat::B)).unwrap();
+        let immed = (instr.immediate()).unwrap();
         let new_pc = state.pipeline.ID_pc.checked_add_signed(immed).unwrap();
 
         // if unaligned on 4-byte boundary
@@ -175,7 +175,7 @@ fn BNE(instr: &Instruction, state: &mut EmulatorState) {
 
 fn BLT(instr: &Instruction, state: &mut EmulatorState) {
     if state.pipeline.datapath.id_multicycle == 0 {
-        let immed = (instr.immediate(InstructionFormat::B)).unwrap();
+        let immed = (instr.immediate()).unwrap();
         let new_pc = state.pipeline.ID_pc.checked_add_signed(immed).unwrap();
 
         // if unaligned on 4-byte boundary
@@ -197,7 +197,7 @@ fn BLT(instr: &Instruction, state: &mut EmulatorState) {
 
 fn BGE(instr: &Instruction, state: &mut EmulatorState) {
     if state.pipeline.datapath.id_multicycle == 0 {
-        let immed = (instr.immediate(InstructionFormat::B)).unwrap();
+        let immed = (instr.immediate()).unwrap();
         let new_pc = state.pipeline.ID_pc.checked_add_signed(immed).unwrap();
 
         // if unaligned on 4-byte boundary
@@ -219,7 +219,7 @@ fn BGE(instr: &Instruction, state: &mut EmulatorState) {
 
 fn BLTU(instr: &Instruction, state: &mut EmulatorState) {
     if state.pipeline.datapath.id_multicycle == 0 {
-        let immed = (instr.immediate(InstructionFormat::B)).unwrap();
+        let immed = (instr.immediate()).unwrap();
         let new_pc = state.pipeline.ID_pc.checked_add_signed(immed).unwrap();
 
         // if unaligned on 4-byte boundary
@@ -245,7 +245,7 @@ fn BLTU(instr: &Instruction, state: &mut EmulatorState) {
 
 fn BGEU(instr: &Instruction, state: &mut EmulatorState) {
     if state.pipeline.datapath.id_multicycle == 0 {
-        let immed = (instr.immediate(InstructionFormat::B)).unwrap();
+        let immed = (instr.immediate()).unwrap();
         let new_pc = state.pipeline.ID_pc.checked_add_signed(immed).unwrap();
 
         // if unaligned on 4-byte boundary
@@ -272,7 +272,7 @@ fn BGEU(instr: &Instruction, state: &mut EmulatorState) {
 fn LB(instr: &Instruction, state: &mut EmulatorState) {
     if state.pipeline.datapath.id_multicycle == 0 {
         let address: u32 = (state.x[instr.rs1() as usize] as i32
-            + instr.immediate(InstructionFormat::I).unwrap()) as u32;
+            + instr.immediate().unwrap()) as u32;
 
         // set data on pipline
         let byte_enable = [true, false, false, false];
@@ -298,7 +298,7 @@ fn LB(instr: &Instruction, state: &mut EmulatorState) {
 fn LH(instr: &Instruction, state: &mut EmulatorState) {
     if state.pipeline.datapath.id_multicycle == 0 {
         let address: u32 = (state.x[instr.rs1() as usize] as i32
-            + instr.immediate(InstructionFormat::I).unwrap()) as u32;
+            + instr.immediate().unwrap()) as u32;
 
         // set data on pipline
         let byte_enable = [true, true, false, false];
@@ -324,7 +324,7 @@ fn LH(instr: &Instruction, state: &mut EmulatorState) {
 fn LW(instr: &Instruction, state: &mut EmulatorState) {
     if state.pipeline.datapath.id_multicycle == 0 {
         let address: u32 = (state.x[instr.rs1() as usize] as i32
-            + instr.immediate(InstructionFormat::I).unwrap()) as u32;
+            + instr.immediate().unwrap()) as u32;
 
         // set data on pipline
         let byte_enable = [true, true, true, true];
@@ -350,7 +350,7 @@ fn LW(instr: &Instruction, state: &mut EmulatorState) {
 fn LBU(instr: &Instruction, state: &mut EmulatorState) {
     if state.pipeline.datapath.id_multicycle == 0 {
         let address: u32 = (state.x[instr.rs1() as usize] as i32
-            + instr.immediate(InstructionFormat::I).unwrap()) as u32;
+            + instr.immediate().unwrap()) as u32;
 
         // set data on pipline
         let byte_enable = [true, false, false, false];
@@ -376,7 +376,7 @@ fn LBU(instr: &Instruction, state: &mut EmulatorState) {
 fn LHU(instr: &Instruction, state: &mut EmulatorState) {
     if state.pipeline.datapath.id_multicycle == 0 {
         let address: u32 = (state.x[instr.rs1() as usize] as i32
-            + instr.immediate(InstructionFormat::I).unwrap()) as u32;
+            + instr.immediate().unwrap()) as u32;
 
         // set data on pipline
         let byte_enable = [true, true, false, false];
@@ -403,7 +403,7 @@ fn SB(instr: &Instruction, state: &mut EmulatorState) {
     if state.pipeline.datapath.id_multicycle == 0 {
         let data = state.x[instr.rs2() as usize];
         let address: u32 =
-            (state.x[instr.rs1() as usize] as i32 + instr.immediate(InstructionFormat::S).unwrap()) as u32;
+            (state.x[instr.rs1() as usize] as i32 + instr.immediate().unwrap()) as u32;
 
         // set data on pipline
         state.pipeline.datapath.data_req_o = true;
@@ -428,7 +428,7 @@ fn SH(instr: &Instruction, state: &mut EmulatorState) {
     if state.pipeline.datapath.id_multicycle == 0 {
         let data = state.x[instr.rs2() as usize];
         let address: u32 =
-            (state.x[instr.rs1() as usize] as i32 + instr.immediate(InstructionFormat::S).unwrap()) as u32;
+            (state.x[instr.rs1() as usize] as i32 + instr.immediate().unwrap()) as u32;
 
         // set data on pipline
         state.pipeline.datapath.data_req_o = true;
@@ -453,7 +453,7 @@ fn SW(instr: &Instruction, state: &mut EmulatorState) {
     if state.pipeline.datapath.id_multicycle == 0 {
         let data = state.x[instr.rs2() as usize];
         let address: u32 =
-            (state.x[instr.rs1() as usize] as i32 + instr.immediate(InstructionFormat::S).unwrap()) as u32;
+            (state.x[instr.rs1() as usize] as i32 + instr.immediate().unwrap()) as u32;
 
         // set data on pipline
         state.pipeline.datapath.data_req_o = true;
@@ -477,7 +477,7 @@ fn SW(instr: &Instruction, state: &mut EmulatorState) {
 fn ADDI(instr: &Instruction, state: &mut EmulatorState) {
     let rd = instr.rd() as usize;
     let rs = instr.rs1() as usize;
-    let immediate = instr.immediate(InstructionFormat::I).unwrap() as i32;
+    let immediate = instr.immediate().unwrap() as i32;
 
     // must match sign
     let rs = state.x[rs] as i32;
@@ -488,7 +488,7 @@ fn ADDI(instr: &Instruction, state: &mut EmulatorState) {
 fn SLTI(instr: &Instruction, state: &mut EmulatorState) {
     let rd = instr.rd() as usize;
     let rs1 = instr.rs1() as usize;
-    let immediate = instr.immediate(InstructionFormat::I).unwrap() as i32;
+    let immediate = instr.immediate().unwrap() as i32;
 
     // must treat as signed
     let rs1 = state.x[rs1] as i32;
@@ -499,7 +499,7 @@ fn SLTI(instr: &Instruction, state: &mut EmulatorState) {
 fn SLTIU(instr: &Instruction, state: &mut EmulatorState) {
     let rd = instr.rd() as usize;
     let rs1 = instr.rs1() as usize;
-    let immediate = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let immediate = instr.immediate().unwrap() as u32;
 
     state.x[rd] = (state.x[rs1] < immediate) as u32;
 }
@@ -507,7 +507,7 @@ fn SLTIU(instr: &Instruction, state: &mut EmulatorState) {
 fn XORI(instr: &Instruction, state: &mut EmulatorState) {
     let rd = instr.rd() as usize;
     let rs = instr.rs1() as usize;
-    let immediate = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let immediate = instr.immediate().unwrap() as u32;
 
     state.x[rd] = state.x[rs] ^ immediate;
 }
@@ -515,7 +515,7 @@ fn XORI(instr: &Instruction, state: &mut EmulatorState) {
 fn ORI(instr: &Instruction, state: &mut EmulatorState) {
     let rd = instr.rd() as usize;
     let rs = instr.rs1() as usize;
-    let immediate = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let immediate = instr.immediate().unwrap() as u32;
 
     state.x[rd] = state.x[rs] | immediate;
 }
@@ -523,7 +523,7 @@ fn ORI(instr: &Instruction, state: &mut EmulatorState) {
 fn ANDI(instr: &Instruction, state: &mut EmulatorState) {
     let rd = instr.rd() as usize;
     let rs = instr.rs1() as usize;
-    let immediate = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let immediate = instr.immediate().unwrap() as u32;
 
     state.x[rd] = state.x[rs] & immediate;
 }
@@ -531,7 +531,7 @@ fn ANDI(instr: &Instruction, state: &mut EmulatorState) {
 fn SLLI(instr: &Instruction, state: &mut EmulatorState) {
     let rd = instr.rd() as usize;
     let rs = instr.rs1() as usize;
-    let immediate = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let immediate = instr.immediate().unwrap() as u32;
 
     state.x[rd] = state.x[rs] << (immediate & 0x1F);
 }
@@ -539,7 +539,7 @@ fn SLLI(instr: &Instruction, state: &mut EmulatorState) {
 fn SRxI(instr: &Instruction, state: &mut EmulatorState) {
     let rd = instr.rd() as usize;
     let rs = instr.rs1() as usize;
-    let immediate = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let immediate = instr.immediate().unwrap() as u32;
 
     let shamt = immediate & 0x1F;
     state.x[rd] = state.x[rs] >> (immediate & 0x1F)
@@ -665,7 +665,7 @@ fn EBREAK(instr: &Instruction, state: &mut EmulatorState) {
 }
 
 fn CSRRW(instr: &Instruction, state: &mut EmulatorState) {
-    let csr = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let csr = instr.immediate().unwrap() as u32;
     let rd = instr.rd() as usize;
     let rs1 = instr.rs1() as usize;
 
@@ -685,7 +685,7 @@ fn CSRRW(instr: &Instruction, state: &mut EmulatorState) {
 }
 
 fn CSRRS(instr: &Instruction, state: &mut EmulatorState) {
-    let csr = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let csr = instr.immediate().unwrap() as u32;
     let rd = instr.rd() as usize;
     let rs1 = instr.rs1() as usize;
 
@@ -700,7 +700,7 @@ fn CSRRS(instr: &Instruction, state: &mut EmulatorState) {
 }
 
 fn CSRRC(instr: &Instruction, state: &mut EmulatorState) {
-    let csr = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let csr = instr.immediate().unwrap() as u32;
     let rd = instr.rd() as usize;
     let rs1 = instr.rs1() as usize;
 
@@ -715,7 +715,7 @@ fn CSRRC(instr: &Instruction, state: &mut EmulatorState) {
 }
 
 fn CSRRWI(instr: &Instruction, state: &mut EmulatorState) {
-    let csr = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let csr = instr.immediate().unwrap() as u32;
     let rd = instr.rd() as usize;
     let zimm = instr.rs1() as u32;
 
@@ -730,7 +730,7 @@ fn CSRRWI(instr: &Instruction, state: &mut EmulatorState) {
 }
 
 fn CSRRSI(instr: &Instruction, state: &mut EmulatorState) {
-    let csr = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let csr = instr.immediate().unwrap() as u32;
     let rd = instr.rd() as usize;
     let zimm = instr.rs1() as u32;
 
@@ -745,7 +745,7 @@ fn CSRRSI(instr: &Instruction, state: &mut EmulatorState) {
 }
 
 fn CSRRCI(instr: &Instruction, state: &mut EmulatorState) {
-    let csr = instr.immediate(InstructionFormat::I).unwrap() as u32;
+    let csr = instr.immediate().unwrap() as u32;
     let rd = instr.rd() as usize;
     let zimm = instr.rs1() as u32;
 

@@ -114,7 +114,10 @@ impl Instruction {
         bits!(self.instr,6;0) as u8
     }
 
-    pub fn immediate(&self, format: InstructionFormat) -> Result<i32, ()> {
+    pub fn immediate(&self) -> Result<i32, ()> {
+        // get format from instruction opcode, etc
+        println!("DEBUG: {:#b}", self.raw());
+        let format: InstructionFormat = InstructionDefinition::from_instr(*self).unwrap().format;
         match format {
             InstructionFormat::I => {
                 Ok((bits!(self.instr, 31) * bitmask!(31; 11) | bits!(self.instr,30;20)) as i32)

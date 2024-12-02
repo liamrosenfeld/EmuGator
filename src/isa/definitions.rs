@@ -21,11 +21,7 @@ pub struct InstructionDefinition {
 
 impl InstructionDefinition {
     pub fn from_instr(instr: Instruction) -> Option<InstructionDefinition> {
-        let opcode = instr.opcode();
-        let funct3 = instr.funct3();
-        let funct7 = instr.funct7();
-
-        ISA::from_opcode(opcode, Some(funct3), Some(funct7)).map(|isa| isa.definition())
+        ISA::instr_to_isa(instr).map(|isa| isa.definition())
     }
 }
 
@@ -73,6 +69,8 @@ pub enum ISA {
     LB,
     LBU,
     FENCE,
+    FENCE_TSO,
+    PAUSE,
     ECALL,
     EBREAK,
     SW,
@@ -327,6 +325,20 @@ impl ISA {
                 funct3: Some(0x0),
                 funct7: None,
             },
+            FENCE_TSO => InstructionDefinition {
+                name: "FENCE_TSO",
+                format: InstructionFormat::I,
+                opcode: 0b0001111,
+                funct3: Some(0x0),
+                funct7: None,
+            },
+            PAUSE => InstructionDefinition {
+                name: "PAUSE",
+                format: InstructionFormat::I,
+                opcode: 0b0001111,
+                funct3: Some(0x0),
+                funct7: None,
+            },
             ECALL => InstructionDefinition {
                 name: "ECALL",
                 format: InstructionFormat::I,
@@ -437,6 +449,67 @@ impl ISA {
     }
 
     pub fn from_opcode(opcode: u8, funct3: Option<u8>, funct7: Option<u8>) -> Option<ISA> {
+        // TODO: Is this still necessary now that instr_to_ISA is implemented? If so, why?
         todo!()
+    }
+
+    pub fn instr_to_isa(instr: Instruction) -> Option<ISA> {
+        use ISA::*;
+        match (instr.opcode(), instr.funct3(), instr.funct7()) {
+            (0b0110111, _, _) => Some(LUI),
+            (0b0010111, _, _) => Some(AUIPC),
+            (0b1101111, _, _) => Some(JAL),
+            (0b1100111, _, _) => Some(JALR),
+            (0b1100011, 0b000, _) => Some(BEQ),
+            (0b1100011, 0b001, _) => Some(BNE),
+            (0b1100011, 0b100, _) => Some(BLT),
+            (0b1100011, 0b101, _) => Some(BGE),
+            (0b1100011, 0b110, _) => Some(BLTU),
+            (0b1100011, 0b111, _) => Some(BGEU),
+            (0b0000011, 0b000, _) => Some(LB),
+            (0b0000011, 0b001, _) => Some(LH),
+            (0b0000011, 0b010, _) => Some(LW),
+            (0b0000011, 0b100, _) => Some(LBU),
+            (0b0000011, 0b101, _) => Some(LHU),
+            (0b0100011, 0b000, _) => Some(SB),
+            (0b0100011, 0b001, _) => Some(SH),
+            (0b0100011, 0b010, _) => Some(SW),
+            (0b0010011, 0b000, _) => Some(ADDI),
+            (0b0010011, 0b010, _) => Some(SLTI),
+            (0b0010011, 0b011, _) => Some(SLTIU),
+            (0b0010011, 0b100, _) => Some(XORI),
+            (0b0010011, 0b110, _) => Some(ORI),
+            (0b0010011, 0b111, _) => Some(ANDI),
+            (0b0010011, 0b001, _) => Some(SLLI),
+            (0b0010011, 0b101, 0b0100000) => Some(SRAI),
+            (0b0010011, 0b101, _) => Some(SRLI),
+            (0b0110011, 0b000, 0b0000000) => Some(ADD),
+            (0b0110011, 0b000, 0b0100000) => Some(SUB),
+            (0b0110011, 0b001, 0b0000000) => Some(SLL),
+            (0b0110011, 0b010, 0b0000000) => Some(SLT),
+            (0b0110011, 0b011, 0b0000000) => Some(SLTU),
+            (0b0110011, 0b100, 0b0000000) => Some(XOR),
+            (0b0110011, 0b101, 0b0000000) => Some(SRL),
+            (0b0110011, 0b101, 0b0100000) => Some(SRA),
+            (0b0110011, 0b110, 0b0000000) => Some(OR),
+            (0b0110011, 0b111, 0b0000000) => Some(AND),
+            (0b0001111, 0b000, _) => match instr.raw() {
+                0b1000_0011_0011_00000_000_00000_0001111 => Some(FENCE_TSO),
+                0b0000_0001_0000_00000_000_00000_0001111 => Some(PAUSE),
+                _ => Some(FENCE),
+            },
+            (0b1110011, 0b000, 0b0000000) => match instr.raw() {
+                0b0000_0000_0000_00000_000_00000_1110011 => Some(ECALL),
+                0b0000_0000_0001_00000_000_00000_1110011 => Some(EBREAK),
+                _ => None,
+            },
+            (0b1110011, 0b001, _) => Some(CSRRW),
+            (0b1110011, 0b010, _) => Some(CSRRS),
+            (0b1110011, 0b011, _) => Some(CSRRC),
+            (0b1110011, 0b101, _) => Some(CSRRWI),
+            (0b1110011, 0b110, _) => Some(CSRRSI),
+            (0b1110011, 0b111, _) => Some(CSRRCI),
+            _ => None,
+        }
     }
 }

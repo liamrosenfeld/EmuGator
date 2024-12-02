@@ -1,9 +1,8 @@
 # EmuGator
-
-Computer engineering capstone team project
+University of Florida Computer Engineering Design Project
 
 ## Completed Work
-Team members who are not familiar with the Rust programming language have been focusing on learning Rust by working on exercises and reading documentation. We have also been working on creating a basic structure for the assembler and emulator to work off in the future. This includes determining how our data structures will be managed to allow emulating pipelining. Furthermore, we have been working on the user-interface.
+The assembler, front-end, and user-interface are now connected. Users can step through programs. Most instructions in the RV-321 instruction set are implemented. 
 
 # Project Architecture
 
@@ -36,9 +35,9 @@ A lot of the assembler code is redundant since every supported instruction requi
 
 
 ## Known Bugs
-- Proper communication between UI, emulator, and assembler have not been established.
-- Assembler does not work for I-instructions that aren't the typical format such as FENCE
-- Code is not properly tested. There are likely unnoticed bugs.
+- Users cannot continously run programs, they must step through the program by clock cycles.
+- Break points have not been implemented.
+- Decreasing page size vertically causes the editor to overflow vertically.
 
 ## Development
 
