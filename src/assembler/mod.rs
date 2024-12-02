@@ -270,8 +270,7 @@ fn parse_instruction(
         || def.format == InstructionFormat::S && def.opcode == 0b0100011
     {
         if parts.len() == 3 && data_labels.contains_key(parts[2]) {
-            let base_addr = data_labels[parts[2]];
-            let offset = (base_addr as i64) - (current_address as i64);
+            let offset = data_labels[parts[2]];
             let modified_addr = format!("{}(x0)", offset);
             let mut modified_parts = parts.to_vec();
             modified_parts[2] = &modified_addr;
