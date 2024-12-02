@@ -1,8 +1,14 @@
 #![allow(non_snake_case)]
 
-use crate::{isa::{Operands, ISA}};
+use crate::isa::{Operands, ISA};
 
 use super::*;
+
+impl ISA {
+    pub fn build(&self, operands: Operands) -> Instruction {
+        Instruction::from_def_operands(self.definition(), operands)
+    }
+}
 
 // normally used to write to memory map for data during testing
 fn write(map: &mut BTreeMap<u32, u8>, address: u32, bytes: &[u8]) {

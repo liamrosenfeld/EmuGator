@@ -12,7 +12,7 @@ pub struct Operands {
 
 #[derive(Debug, Clone, Copy)]
 pub struct InstructionDefinition {
-    pub name: &'static str,
+    pub _name: &'static str,
     pub opcode: u8,
     pub funct3: Option<u8>,
     pub funct7: Option<u8>,
@@ -36,6 +36,7 @@ pub enum InstructionFormat {
 }
 
 #[derive(EnumString, Debug)]
+#[allow(non_camel_case_types)]
 pub enum ISA {
     ADD,
     SUB,
@@ -88,78 +89,74 @@ pub enum ISA {
 }
 
 impl ISA {
-    pub fn build(&self, operands: Operands) -> Instruction {
-        Instruction::from_def_operands(self.definition(), operands)
-    }
-
     pub fn definition(&self) -> InstructionDefinition {
         use ISA::*;
         match self {
             ADD => InstructionDefinition {
-                name: "ADD",
+                _name: "ADD",
                 format: InstructionFormat::R,
                 opcode: 0b0110011,
                 funct3: Some(0x0),
                 funct7: Some(0x00),
             },
             SUB => InstructionDefinition {
-                name: "SUB",
+                _name: "SUB",
                 format: InstructionFormat::R,
                 opcode: 0b0110011,
                 funct3: Some(0x0),
                 funct7: Some(0x20),
             },
             SLT => InstructionDefinition {
-                name: "SLT",
+                _name: "SLT",
                 format: InstructionFormat::R,
                 opcode: 0b0110011,
                 funct3: Some(0x2),
                 funct7: Some(0x00),
             },
             SLTU => InstructionDefinition {
-                name: "SLTU",
+                _name: "SLTU",
                 format: InstructionFormat::R,
                 opcode: 0b0110011,
                 funct3: Some(0x3),
                 funct7: Some(0x00),
             },
             AND => InstructionDefinition {
-                name: "AND",
+                _name: "AND",
                 format: InstructionFormat::R,
                 opcode: 0b0110011,
                 funct3: Some(0x7),
                 funct7: Some(0x00),
             },
             OR => InstructionDefinition {
-                name: "OR",
+                _name: "OR",
                 format: InstructionFormat::R,
                 opcode: 0b0110011,
                 funct3: Some(0x6),
                 funct7: Some(0x00),
             },
             XOR => InstructionDefinition {
-                name: "XOR",
+                _name: "XOR",
                 format: InstructionFormat::R,
                 opcode: 0b0110011,
                 funct3: Some(0x4),
                 funct7: Some(0x00),
             },
             SLL => InstructionDefinition {
-                name: "SLL",
+                _name: "SLL",
                 format: InstructionFormat::R,
                 opcode: 0b0110011,
                 funct3: Some(0x1),
                 funct7: Some(0x00),
             },
             SRL => InstructionDefinition {
-                name: "SRL",
+                _name: "SRL",
                 format: InstructionFormat::R,
                 opcode: 0b0110011,
                 funct3: Some(0x5),
                 funct7: Some(0x00),
             },
             SRA => InstructionDefinition {
-                name: "SRA",
+                _name: "SRA",
                 format: InstructionFormat::R,
                 opcode: 0b0110011,
                 funct3: Some(0x5),
@@ -168,112 +165,112 @@ impl ISA {
 
             // I-type instructions
             ADDI => InstructionDefinition {
-                name: "ADDI",
+                _name: "ADDI",
                 format: InstructionFormat::I,
                 opcode: 0b0010011,
                 funct3: Some(0x0),
                 funct7: None,
             },
             SLTI => InstructionDefinition {
-                name: "SLTI",
+                _name: "SLTI",
                 format: InstructionFormat::I,
                 opcode: 0b0010011,
                 funct3: Some(0x2),
                 funct7: None,
             },
             SLTIU => InstructionDefinition {
-                name: "SLTIU",
+                _name: "SLTIU",
                 format: InstructionFormat::I,
                 opcode: 0b0010011,
                 funct3: Some(0x3),
                 funct7: None,
             },
             ANDI => InstructionDefinition {
-                name: "ANDI",
+                _name: "ANDI",
                 format: InstructionFormat::I,
                 opcode: 0b0010011,
                 funct3: Some(0x7),
                 funct7: None,
             },
             ORI => InstructionDefinition {
-                name: "ORI",
+                _name: "ORI",
                 format: InstructionFormat::I,
                 opcode: 0b0010011,
                 funct3: Some(0x6),
                 funct7: None,
             },
             XORI => InstructionDefinition {
-                name: "XORI",
+                _name: "XORI",
                 format: InstructionFormat::I,
                 opcode: 0b0010011,
                 funct3: Some(0x4),
                 funct7: None,
             },
             SLLI => InstructionDefinition {
-                name: "SLLI",
+                _name: "SLLI",
                 format: InstructionFormat::I,
                 opcode: 0b0010011,
                 funct3: Some(0x1),
                 funct7: Some(0x00),
             },
             SRLI => InstructionDefinition {
-                name: "SRLI",
+                _name: "SRLI",
                 format: InstructionFormat::I,
                 opcode: 0b0010011,
                 funct3: Some(0x5),
                 funct7: Some(0x00),
             },
             SRAI => InstructionDefinition {
-                name: "SRAI",
+                _name: "SRAI",
                 format: InstructionFormat::I,
                 opcode: 0b0010011,
                 funct3: Some(0x5),
                 funct7: Some(0x20),
             },
             JALR => InstructionDefinition {
-                name: "JALR",
+                _name: "JALR",
                 format: InstructionFormat::I,
                 opcode: 0b1100111,
                 funct3: Some(0x0),
                 funct7: None,
             },
             CSRRW => InstructionDefinition {
-                name: "CSRRW",
+                _name: "CSRRW",
                 format: InstructionFormat::I,
                 opcode: 0b1110011,
                 funct3: Some(0x1),
                 funct7: Some(0x00),
             },
             CSRRS => InstructionDefinition {
-                name: "CSRRS",
+                _name: "CSRRS",
                 format: InstructionFormat::I,
                 opcode: 0b1110011,
                 funct3: Some(0x2),
                 funct7: Some(0x0),
             },
             CSRRC => InstructionDefinition {
-                name: "CSRRC",
+                _name: "CSRRC",
                 format: InstructionFormat::I,
                 opcode: 0b1110011,
                 funct3: Some(0x3),
                 funct7: Some(0x0),
             },
             CSRRWI => InstructionDefinition {
-                name: "CSRRWI",
+                _name: "CSRRWI",
                 format: InstructionFormat::I,
                 opcode: 0b1110011,
                 funct3: Some(0x5),
                 funct7: Some(0x6),
             },
             CSRRSI => InstructionDefinition {
-                name: "CSRRSI",
+                _name: "CSRRSI",
                 format: InstructionFormat::I,
                 opcode: 0b1110011,
                 funct3: Some(0x6),
                 funct7: Some(0x2),
             },
             CSRRCI => InstructionDefinition {
-                name: "CSRRCI",
+                _name: "CSRRCI",
                 format: InstructionFormat::I,
                 opcode: 0b1110011,
                 funct3: Some(0x7),
@@ -282,35 +279,35 @@ impl ISA {
 
             // Load instructions (I-type)
             LB => InstructionDefinition {
-                name: "LB",
+                _name: "LB",
                 format: InstructionFormat::I,
                 opcode: 0b0000011,
                 funct3: Some(0x0),
                 funct7: None,
             },
             LH => InstructionDefinition {
-                name: "LH",
+                _name: "LH",
                 format: InstructionFormat::I,
                 opcode: 0b0000011,
                 funct3: Some(0x1),
                 funct7: None,
             },
             LW => InstructionDefinition {
-                name: "LW",
+                _name: "LW",
                 format: InstructionFormat::I,
                 opcode: 0b0000011,
                 funct3: Some(0x2),
                 funct7: None,
             },
             LBU => InstructionDefinition {
-                name: "LBU",
+                _name: "LBU",
                 format: InstructionFormat::I,
                 opcode: 0b0000011,
                 funct3: Some(0x4),
                 funct7: None,
             },
             LHU => InstructionDefinition {
-                name: "LHU",
+                _name: "LHU",
                 format: InstructionFormat::I,
                 opcode: 0b0000011,
                 funct3: Some(0x5),
@@ -319,35 +316,35 @@ impl ISA {
 
             // Special I-type instructions
             FENCE => InstructionDefinition {
-                name: "FENCE",
+                _name: "FENCE",
                 format: InstructionFormat::I,
                 opcode: 0b0001111,
                 funct3: Some(0x0),
                 funct7: None,
             },
             FENCE_TSO => InstructionDefinition {
-                name: "FENCE_TSO",
+                _name: "FENCE_TSO",
                 format: InstructionFormat::I,
                 opcode: 0b0001111,
                 funct3: Some(0x0),
                 funct7: None,
             },
             PAUSE => InstructionDefinition {
-                name: "PAUSE",
+                _name: "PAUSE",
                 format: InstructionFormat::I,
                 opcode: 0b0001111,
                 funct3: Some(0x0),
                 funct7: None,
             },
             ECALL => InstructionDefinition {
-                name: "ECALL",
+                _name: "ECALL",
                 format: InstructionFormat::I,
                 opcode: 0b1110011,
                 funct3: Some(0x0),
                 funct7: None,
             },
             EBREAK => InstructionDefinition {
-                name: "EBREAK",
+                _name: "EBREAK",
                 format: InstructionFormat::I,
                 opcode: 0b1110011,
                 funct3: Some(0x0),
@@ -356,21 +353,21 @@ impl ISA {
 
             // S-type instructions
             SW => InstructionDefinition {
-                name: "SW",
+                _name: "SW",
                 format: InstructionFormat::S,
                 opcode: 0b0100011,
                 funct3: Some(0x2),
                 funct7: None,
             },
             SH => InstructionDefinition {
-                name: "SH",
+                _name: "SH",
                 format: InstructionFormat::S,
                 opcode: 0b0100011,
                 funct3: Some(0x1),
                 funct7: None,
             },
             SB => InstructionDefinition {
-                name: "SB",
+                _name: "SB",
                 format: InstructionFormat::S,
                 opcode: 0b0100011,
                 funct3: Some(0x0),
@@ -379,42 +376,42 @@ impl ISA {
 
             // B-type instructions
             BEQ => InstructionDefinition {
-                name: "BEQ",
+                _name: "BEQ",
                 format: InstructionFormat::B,
                 opcode: 0b1100011,
                 funct3: Some(0x0),
                 funct7: None,
             },
             BNE => InstructionDefinition {
-                name: "BNE",
+                _name: "BNE",
                 format: InstructionFormat::B,
                 opcode: 0b1100011,
                 funct3: Some(0x1),
                 funct7: None,
             },
             BLT => InstructionDefinition {
-                name: "BLT",
+                _name: "BLT",
                 format: InstructionFormat::B,
                 opcode: 0b1100011,
                 funct3: Some(0x4),
                 funct7: None,
             },
             BLTU => InstructionDefinition {
-                name: "BLTU",
+                _name: "BLTU",
                 format: InstructionFormat::B,
                 opcode: 0b1100011,
                 funct3: Some(0x6),
                 funct7: None,
             },
             BGE => InstructionDefinition {
-                name: "BGE",
+                _name: "BGE",
                 format: InstructionFormat::B,
                 opcode: 0b1100011,
                 funct3: Some(0x5),
                 funct7: None,
             },
             BGEU => InstructionDefinition {
-                name: "BGEU",
+                _name: "BGEU",
                 format: InstructionFormat::B,
                 opcode: 0b1100011,
                 funct3: Some(0x7),
@@ -423,14 +420,14 @@ impl ISA {
 
             // U-type instructions
             LUI => InstructionDefinition {
-                name: "LUI",
+                _name: "LUI",
                 format: InstructionFormat::U,
                 opcode: 0b0110111,
                 funct3: None,
                 funct7: None,
             },
             AUIPC => InstructionDefinition {
-                name: "AUIPC",
+                _name: "AUIPC",
                 format: InstructionFormat::U,
                 opcode: 0b0010111,
                 funct3: None,
@@ -439,18 +436,13 @@ impl ISA {
 
             // J-type instructions
             JAL => InstructionDefinition {
-                name: "JAL",
+                _name: "JAL",
                 format: InstructionFormat::J,
                 opcode: 0b1101111,
                 funct3: None,
                 funct7: None,
             },
         }
-    }
-
-    pub fn from_opcode(opcode: u8, funct3: Option<u8>, funct7: Option<u8>) -> Option<ISA> {
-        // TODO: Is this still necessary now that instr_to_ISA is implemented? If so, why?
-        todo!()
     }
 
     pub fn instr_to_isa(instr: Instruction) -> Option<ISA> {

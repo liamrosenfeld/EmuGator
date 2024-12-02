@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 
 use super::{EmulatorState, InstructionHandler};
-use crate::isa::{Instruction};
+use crate::isa::Instruction;
 use crate::{bitmask, bits};
 
 pub fn get_handler(instr: Instruction) -> Result<InstructionHandler, ()> {
@@ -630,7 +630,8 @@ fn AND(instr: &Instruction, state: &mut EmulatorState) {
     state.x[rd] = state.x[rs1] & state.x[rs2];
 }
 
-fn FENCE(_instr: &Instruction, _state: &mut EmulatorState) {
+#[allow(unused_variables)]
+fn FENCE(instr: &Instruction, state: &mut EmulatorState) {
     /*
      * Instruction for ordering device I/O and memory accesses
      * as viewed by other RISC-V harts and external devices
@@ -640,7 +641,8 @@ fn FENCE(_instr: &Instruction, _state: &mut EmulatorState) {
      */
 }
 
-fn FENCE_TSO(_instr: &Instruction, _state: &mut EmulatorState) {
+#[allow(unused_variables)]
+fn FENCE_TSO(instr: &Instruction, state: &mut EmulatorState) {
     /*
      * Instruction for ordering device I/O and memory accesses
      * as viewed by other RISC-V harts and external devices
@@ -650,15 +652,18 @@ fn FENCE_TSO(_instr: &Instruction, _state: &mut EmulatorState) {
      */
 }
 
+#[allow(unused_variables)]
 fn PAUSE(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
 }
 
+#[allow(unused_variables)]
 fn ECALL(instr: &Instruction, state: &mut EmulatorState) {
     todo!()
     /* System call */
 }
 
+#[allow(unused_variables)]
 fn EBREAK(instr: &Instruction, state: &mut EmulatorState) {
     /* Call to debugger, likely going to be used to implement break points */
     state.pipeline.datapath.debug_req_i = true;
