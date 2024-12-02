@@ -116,7 +116,6 @@ impl Instruction {
 
     pub fn immediate(&self) -> Result<i32, ()> {
         // get format from instruction opcode, etc
-        println!("DEBUG: {:#b}", self.raw());
         let format: InstructionFormat = InstructionDefinition::from_instr(*self).unwrap().format;
         match format {
             InstructionFormat::I => {
