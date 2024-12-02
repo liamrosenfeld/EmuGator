@@ -40,6 +40,654 @@ fn print_some_output() {
 }
 
 #[test]
+fn test_ADD() {
+    let program = ".text\nADD X1, X2, X3";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0xB3, 0x00, 0x31, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of ADD instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_SUB() {
+    let program = ".text\nSUB X1, X2, X3";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0xB3, 0x00, 0x31, 0x40];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of SUB instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_SLT() {
+    let program = ".text\nSLT X1, X2, X3";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0xB3, 0x20, 0x31, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of SLT instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_SLTU() {
+    let program = ".text\nSLTU X1, X2, X3";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0xB3, 0x30, 0x31, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of SLTU instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_AND() {
+    let program = ".text\nAND X1, X2, X3";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0xB3, 0x70, 0x31, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of AND instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_OR() {
+    let program = ".text\nOR X1, X2, X3";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0xB3, 0x60, 0x31, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of OR instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_XOR() {
+    let program = ".text\nXOR X1, X2, X3";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0xB3, 0x40, 0x31, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of XOR instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_SLL() {
+    let program = ".text\nSLL X1, X2, X3";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0xB3, 0x10, 0x31, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of SLL instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_SRL() {
+    let program = ".text\nSRL X1, X2, X3";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0xB3, 0x50, 0x31, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of SRL instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_SRA() {
+    let program = ".text\nSRA X1, X2, X3";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0xB3, 0x50, 0x31, 0x40];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of SRA instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_ADDI() {
+    let program = ".text\nADDI X1, X2, 10";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x93, 0x00, 0xA1, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of ADDI instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_SLTI() {
+    let program = ".text\nSLTI X1, X2, 10";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x93, 0x20, 0xA1, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of SLTI instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_SLTIU() {
+    let program = ".text\nSLTIU X1, X2, 10";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x93, 0x30, 0xA1, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of SLTIU instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_ANDI() {
+    let program = ".text\nANDI X1, X2, 0xFF";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x93, 0x70, 0xF1, 0x0F];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of ANDI instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_ORI() {
+    let program = ".text\nORI X1, X2, 0xFF";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x93, 0x60, 0xF1, 0x0F];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of ORI instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_XORI() {
+    let program = ".text\nXORI X1, X2, 0xFF";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x93, 0x40, 0xF1, 0x0F];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of XORI instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_SLLI() {
+    let program = ".text\nSLLI X1, X2, 2";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x93, 0x10, 0x21, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of SLLI instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_SRLI() {
+    let program = ".text\nSRLI X1, X2, 2";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x93, 0x50, 0x21, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of SRLI instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_SRAI() {
+    let program = ".text\nSRAI X1, X2, 2";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x93, 0x50, 0x21, 0x40];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of SRAI instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_JALR() {
+    let program = ".text\nJALR X1, X2, 0x100";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0xE7, 0x00, 0x01, 0x10];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of JALR instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_LW() {
+    let program = ".text\nLW X1, 0(X2)";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x83, 0x20, 0x01, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of LW instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_LH() {
+    let program = ".text\nLH X1, 0(X2)";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x83, 0x10, 0x01, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of LH instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_LHU() {
+    let program = ".text\nLHU X1, 0(X2)";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x83, 0x50, 0x01, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of LHU instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_LB() {
+    let program = ".text\nLB X1, 0(X2)";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x83, 0x00, 0x01, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of LB instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_LBU() {
+    let program = ".text\nLBU X1, 0(X2)";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x83, 0x40, 0x01, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of LBU instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_FENCE() {
+    let program = ".text\nFENCE";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x0F, 0x00, 0x00, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of FENCE instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_ECALL() {
+    let program = ".text\nECALL";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x73, 0x00, 0x00, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of ECALL instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_EBREAK() {
+    let program = ".text\nEBREAK";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x73, 0x00, 0x10, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of EBREAK instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_BEQ() {
+    let program = ".text\nlabel:\nBEQ X1, X2, label";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x63, 0x80, 0x20, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of BEQ instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_BNE() {
+    let program = ".text\nlabel:\nBNE X1, X2, label";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x63, 0x90, 0x20, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of BNE instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_BLT() {
+    let program = ".text\nlabel:\nBLT X1, X2, label";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x63, 0xC0, 0x20, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of BLT instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_BLTU() {
+    let program = ".text\nlabel:\nBLTU X1, X2, label";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x63, 0xE0, 0x20, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of BLTU instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_BGE() {
+    let program = ".text\nlabel:\nBGE X1, X2, label";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x63, 0xD0, 0x20, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of BGE instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_BGEU() {
+    let program = ".text\nlabel:\nBGEU X1, X2, label";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x63, 0xF0, 0x20, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of BGEU instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_LUI() {
+    let program = ".text\nLUI X1, 0xFFF";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0xB7, 0xF0, 0xFF, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of LUI instruction",
+            i
+        );
+    }
+}
+
+#[test]
+fn test_AUIPC() {
+    let program = ".text\nAUIPC X1, 0xFFF";
+    let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
+    let (inst_mem, _, _) = assembled_program.emulator_maps();
+
+    let expected_bytes = [0x97, 0xF0, 0xFF, 0x00];
+
+    for i in 0..4 {
+        assert_eq!(
+            inst_mem.get(&(i as u32)),
+            Some(&expected_bytes[i]),
+            "Mismatch at byte {} of AUIPC instruction",
+            i
+        );
+    }
+}
+
+#[test]
 fn assembler_different_locations() {
     let program = include_test_file!("different-locations.s");
     let assembled_program = assemble(program).unwrap_or_else(|e| panic!("Assembly Error: {}", e));
