@@ -7,11 +7,15 @@ use monaco::sys::editor::IEditorMinimapOptions;
 use monaco_editor::MonacoEditor;
 
 pub use highlight::register_riscv_language;
+pub use monaco_editor::LineHighlight;
 
 /// A wrapper around the Monaco editor with our expected functionality
 #[component]
 #[allow(non_snake_case)]
-pub fn CodeEditor(mut source: Signal<String>) -> Element {
+pub fn CodeEditor(
+    mut source: Signal<String>,
+    line_highlights: ReadOnlySignal<Vec<LineHighlight>>,
+) -> Element {
     // basic model
     // TODO: support external changes to source being reflected in the model
     let model = use_signal(|| {
@@ -44,9 +48,6 @@ pub fn CodeEditor(mut source: Signal<String>) -> Element {
     });
 
     rsx! {
-        MonacoEditor {
-            model: model(),
-            options: options(),
-        }
+        MonacoEditor { model: model(), options: options(), line_highlights }
     }
 }

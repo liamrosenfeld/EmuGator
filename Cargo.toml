@@ -25,3 +25,4 @@ dioxus-logger = "0.5"
 
 # util
 strum = { version = "0.26.3", features = ["derive"] }
+bimap = "0.6"

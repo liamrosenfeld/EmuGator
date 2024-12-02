@@ -3,4 +3,5 @@
     "tailwindCSS.includeLanguages": {
         "rust": "html"
     },
+    "editor.formatOnSave": true,
 }

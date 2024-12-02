@@ -1,15 +1,15 @@
-use dioxus::prelude::*;
 use crate::assembler::{AssembledProgram, Section};
 use crate::emulator::EmulatorState;
+use dioxus::prelude::*;
 
 #[component]
 #[allow(non_snake_case)]
 pub fn InstructionView(
     assembled_program: Signal<Option<AssembledProgram>>,
-    emulator_state: Signal<EmulatorState>
+    emulator_state: Signal<EmulatorState>,
 ) -> Element {
     let program = assembled_program.read();
-    
+
     // Early return if no program is assembled
     if program.is_none() {
         return rsx! {
@@ -23,19 +23,18 @@ pub fn InstructionView(
     let instruction_memory = &program.instruction_memory;
     let text_start = program.get_section_start(Section::Text) as usize;
     let current_pc = emulator_state.read().pipeline.ID_pc as usize;
-    
+
     let total_instructions = instruction_memory.len() / 4; // Since each instruction is 4 bytes
 
     rsx! {
         div { class: "h-full overflow-hidden",
-            div { 
-                class: "h-full overflow-auto pr-2",
+            div { class: "h-full overflow-auto pr-2",
                 div { class: "bg-white rounded shadow-sm p-2",
                     for i in 0..total_instructions {
                         {
                             let base_addr = text_start + i * 4;
                             rsx! {
-                                div { 
+                                div {
                                     class: {
                                         if i < total_instructions - 1 {
                                             "flex justify-between items-center border-b border-gray-100 py-1"
@@ -48,7 +47,7 @@ pub fn InstructionView(
                                             div { class: "font-mono text-gray-500 text-xs",
                                                 "0x{base_addr:04x}:"
                                             }
-                                            if let Some(line) = program.source_map.get(&(base_addr as u32)) {
+                                            if let Some(line) = program.source_map.get_by_left(&(base_addr as u32)) {
                                                 span { class: "text-xs text-gray-500",
                                                     "Line {line}"
                                                 }
@@ -60,7 +59,7 @@ pub fn InstructionView(
                                                     ((instruction_memory.get(&((base_addr + 1) as u32)).copied().unwrap_or(0) as u32) << 8) |
                                                     ((instruction_memory.get(&((base_addr + 2) as u32)).copied().unwrap_or(0) as u32) << 16) |
                                                     ((instruction_memory.get(&((base_addr + 3) as u32)).copied().unwrap_or(0) as u32) << 24);
-                                                
+
                                                 rsx! {
                                                     span {
                                                         class: if base_addr == current_pc { "text-orange-500" } else { "" },
