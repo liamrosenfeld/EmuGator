@@ -698,19 +698,19 @@ fn assembler_different_locations() {
         (0x0100, 0x83),
         (0x0101, 0x20),
         (0x0102, 0x80),
-        (0x0103, 0x2E),
+        (0x0103, 0x3E),
         (0x0104, 0x03),
         (0x0105, 0x21),
-        (0x0106, 0x80),
-        (0x0107, 0x2E),
+        (0x0106, 0xC0),
+        (0x0107, 0x3E),
         (0x0108, 0xB3),
         (0x0109, 0x81),
         (0x010A, 0x20),
         (0x010B, 0x00),
         (0x010C, 0x23),
-        (0x010D, 0x22),
+        (0x010D, 0x28),
         (0x010E, 0x30),
-        (0x010F, 0x2E),
+        (0x010F, 0x3E),
     ];
 
     for (addr, expected_byte) in expected_instructions {
@@ -762,10 +762,10 @@ fn assembler_different_locations() {
 
     // Test reconstructed 32-bit instructions
     let expected_32bit_instructions: Vec<(u32, u32)> = vec![
-        (0x0100, 0x2E802083), // lw x1, value1
-        (0x0104, 0x2E802103), // lw x2, value2
+        (0x0100, 0x3E802083), // lw x1, value1
+        (0x0104, 0x3EC02103), // lw x2, value2
         (0x0108, 0x002081B3), // add x3, x1, x2
-        (0x010C, 0x2E302223), // sw x3, result
+        (0x010C, 0x3E302823), // sw x3, result
     ];
 
     for (addr, expected_instruction) in expected_32bit_instructions {
