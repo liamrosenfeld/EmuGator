@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod tests;
-
 mod assembled_program;
 
-pub use assembled_program::{AssembledProgram, Section};
+use assembled_program::AssemblyErr;
+pub use assembled_program::{AssembledProgram, Address};
 
 use std::{
     collections::{BTreeMap, HashMap},
@@ -18,156 +18,30 @@ struct DataItem {
     values: Vec<u8>,
 }
 
-pub fn assemble(program: &str) -> Result<AssembledProgram, String> {
-    let mut assembled = AssembledProgram::new();
-    let mut current_section = Section::Text;
-    let mut text_address = 0;
-    let mut data_address = 0;
-
-    // First pass: collect labels and process data
-    for (line_num, line) in program.lines().enumerate() {
-        let line = clean_line(line);
-        if line.is_empty() {
-            continue;
-        }
-
-        let (label_opt, content) = split_label_and_content(&line);
-
-        // Handle section directives with optional address
-        if let Some((section, address)) = parse_section_directive(&content) {
-            current_section = section;
-            match section {
-                Section::Text => text_address = address,
-                Section::Data => data_address = address,
-            }
-            continue;
-        }
-
-        // Handle label if present
-        if let Some(label) = label_opt {
-            match current_section {
-                Section::Text => {
-                    assembled.add_label(label, text_address, false);
-                }
-                Section::Data => {
-                    assembled.add_label(label, data_address, true);
-                }
-            }
-        }
-
-        // If there's no content after the label, continue to next line
-        if content.is_empty() {
-            continue;
-        }
-
-        // Handle data directives
-        if content.starts_with('.') {
-            if current_section == Section::Data {
-                if let Ok(Some((_, data))) = parse_data_line(&content) {
-                    assembled.add_data(data_address, &data.values);
-                    data_address += data.size as u32;
-                }
-            } else {
-                return Err(format!(
-                    "Data directive '{}' outside of .data section on line {}",
-                    content,
-                    line_num + 1
-                ));
-            }
-            continue;
-        }
-
-        // Count instruction size for text section
-        if current_section == Section::Text && !content.is_empty() {
-            text_address += 4;
-        }
-    }
-
-    // Second pass: assemble instructions
-    current_section = Section::Text;
-    text_address = assembled.get_section_start(Section::Text);
-
-    for (line_num, line) in program.lines().enumerate() {
-        let line = clean_line(line);
-        if line.is_empty() {
-            continue;
-        }
-
-        let (_, content) = split_label_and_content(&line);
-        if content.is_empty() {
-            continue;
-        }
-
-        // Handle section directives
-        if let Some((section, address)) = parse_section_directive(&content) {
-            current_section = section;
-            match section {
-                Section::Text => text_address = address,
-                Section::Data => (),
-            }
-            continue;
-        }
-
-        if current_section == Section::Text && !content.starts_with('.') {
-            match parse_instruction(
-                &content,
-                &assembled.labels,
-                &assembled.data_labels,
-                text_address,
-            ) {
-                Ok(instruction) => {
-                    let encoded = instruction.raw();
-                    assembled.add_instruction(text_address, encoded, line_num + 1);
-                    text_address += 4;
-                }
-                Err(e) => return Err(format!("Error on line {}: {}", line_num + 1, e)),
-            }
-        }
-    }
-
-    Ok(assembled)
+pub fn assemble(program: &str) -> Result<AssembledProgram, AssemblyErr> {
+    program.parse::<AssembledProgram>()
 }
 
-fn parse_section_directive(line: &str) -> Option<(Section, u32)> {
-    let parts: Vec<&str> = line.split_whitespace().collect();
-    if parts.is_empty() || !parts[0].starts_with('.') {
-        return None;
-    }
-
-    let section = match parts[0] {
-        ".data" => Some(Section::Data),
-        ".text" => Some(Section::Text),
-        _ => None,
-    }?;
-
-    let address = if parts.len() > 1 {
-        // Parse hex or decimal address
-        if parts[1].starts_with("0x") {
-            u32::from_str_radix(&parts[1][2..], 16).ok()?
-        } else {
-            parts[1].parse().ok()?
-        }
+fn clean_line(line: &str) -> &str {
+    // Remove leading/trailing whitespace and comments
+    if let Some(hash_pos) = line.find('#') {
+        // Remove comments
+        line[..hash_pos].trim()
     } else {
-        0 // Default address
-    };
-
-    Some((section, address))
-}
-
-fn clean_line(line: &str) -> String {
-    match line.split('#').next() {
-        Some(l) => l.trim().to_string(),
-        None => String::new(),
+        line.trim()
     }
 }
 
-fn split_label_and_content(line: &str) -> (Option<String>, String) {
+fn split_label_and_content(line: &str) -> (Option<&str>, &str) {
     if let Some(colon_pos) = line.find(':') {
-        let (label, rest) = line.split_at(colon_pos);
-        let content = rest[1..].trim().to_string();
-        (Some(label.trim().to_string()), content)
+        // Label found
+        let (raw_label, rest) = line.split_at(colon_pos);
+        let content = rest[1..].trim();
+        let label = raw_label.trim();
+        (Some(label), content)
     } else {
-        (None, line.to_string())
+        // No label
+        (None, line)
     }
 }
 

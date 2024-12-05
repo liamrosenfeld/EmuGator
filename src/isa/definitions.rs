@@ -1,4 +1,6 @@
-use strum::EnumString;
+use std::str::FromStr;
+
+use strum::{EnumString, ParseError};
 
 use super::Instruction;
 
@@ -22,6 +24,14 @@ pub struct InstructionDefinition {
 impl InstructionDefinition {
     pub fn from_instr(instr: Instruction) -> Option<InstructionDefinition> {
         ISA::instr_to_isa(instr).map(|isa| isa.definition())
+    }
+}
+
+impl FromStr for InstructionDefinition {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        s.parse().map(|isa: ISA| isa.definition())
     }
 }
 
