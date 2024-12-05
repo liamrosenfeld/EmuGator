@@ -12,6 +12,7 @@ pub fn RunButtons(
     assembled_program: Signal<Option<AssembledProgram>>,
     emulator_state: Signal<EmulatorState>,
 ) -> Element {
+    //let mut stop_flag = use_signal(|| false);
     rsx! {
         // bottom margin
         div { class: "flex content-center gap-2 justify-center mb-2",
@@ -56,18 +57,32 @@ pub fn RunButtons(
                                 &mut *program,
                             );
                             *(emulator_state.write()) = new_state;
-                            while !emulator_state.read().deref().pipeline.datapath.debug_req_i {
+                            while !emulator_state.read().deref().pipeline.datapath.debug_req_i && !emulator_state.read().deref().pipeline.datapath.instr_err_i {
+                                /*
+                                if *stop_flag.read() {
+                                    *(stop_flag.write()) = false;
+                                    break;
+                                }
+                                */
                                 let new_state = emulator::clock(
                                     emulator_state.read().deref(),
                                     &mut *program,
                                 );
                                 *(emulator_state.write()) = new_state;
-                                println!("Clock");
                             }
                         }
                     },
                     "Run to Break"
                 }
+                /*
+                button {
+                    class: "bg-purple-500 hover:bg-purple-600 text-s text-white font-bold py-1 px-2 rounded",
+                    onclick: move |_| {
+                        *(stop_flag.write()) = true;
+                    },
+                    "Stop"
+                }
+                */
             }
         }
     }
