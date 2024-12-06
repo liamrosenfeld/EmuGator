@@ -2,7 +2,7 @@
 University of Florida Computer Engineering Design Project
 
 ## Completed Work
-The assembler, front-end, and user-interface are now connected. Users can step through programs. Most instructions in the RV-321 instruction set are implemented. 
+The assembler, front-end, and user-interface are now connected. Users can step through programs. Most instructions in the RV-321 instruction set are implemented except EBREAK and ECALL. The assembler assembles the code and detects syntax errors. The UI includes syntax highlighting and allows users to step through clock cycles through calls to the emulator functions. Users can see the current instruction executing, the last instruction fetched, registers, instruction memory, and data memory.
 
 # Project Architecture
 
@@ -12,7 +12,6 @@ The architecture of the editor was designed and established during the pre-alpha
 - **Top-Level Component**: Provides default configurations to improve appearance and expose the model of the editor to the Dioxus state life cycle.
 
 Remaining architectural challenges include:
-- Syntax highlighting
 - Getting diagnostics from the assembler
 - Implementing hover documentation
 
@@ -30,9 +29,6 @@ The assembler is long yet simple and integrates with the frontend to take in ass
   2. **Second Pass**: Generates the actual machine code.
 
 - The main function, `assemble`, handles the assembly string and coordinates the parsing passes.
-
-A lot of the assembler code is redundant since every supported instruction requires defining components like `opcode`, `funct3`, and `funct7` in structures. Although the codebase is long, it remains straightforward.
-
 
 ## Known Bugs
 - Users cannot continously run programs, they must step through the program by clock cycles.
