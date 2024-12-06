@@ -34,6 +34,7 @@ The assembler is long yet simple and integrates with the frontend to take in ass
 - Users cannot continously run programs, they must step through the program by clock cycles.
 - Break points have not been implemented.
 - Decreasing page size vertically causes the editor to overflow vertically.
+- .word allocations over 255 do not currently work
 
 ## Development
 
