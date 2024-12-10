@@ -2,15 +2,13 @@
 mod assembler;
 mod code_editor;
 mod emulator;
+mod interface;
 mod isa;
 mod utils;
-mod interface;
 
 use dioxus::prelude::*;
 use dioxus_logger::tracing::{info, Level};
 use interface::App;
-
-const _TAILWIND_URL: &str = manganis::mg!(file("./assets/tailwind.css"));
 
 fn main() {
     // Init logger

@@ -62,6 +62,8 @@ pub fn App() -> Element {
     });
 
     rsx! {
+        document::Stylesheet { href: asset!("/assets/tailwind.css") }
+
         div { class: "flex h-screen w-full",
             div { class: "w-1/2 p-4 flex flex-col h-full bg-[#1E1E1E]",
                 RunButtons { source, assembled_program, emulator_state }
